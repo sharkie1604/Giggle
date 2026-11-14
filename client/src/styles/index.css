@@ -1,0 +1,100 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #FFFDF7;
+    color: #0F0F0F;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+}
+
+@layer components {
+  /* Cartoon-Brutalism Card */
+  .brutal-card {
+    background-color: #ffffff;
+    border: 4px solid #0F0F0F;
+    box-shadow: 4px 4px 0px #0F0F0F;
+    border-radius: 12px;
+    transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.15s cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  .brutal-card:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0px #0F0F0F;
+  }
+
+  /* Cartoon-Brutalism Button */
+  .brutal-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.65rem 1.4rem;
+    border: 4px solid #0F0F0F;
+    box-shadow: 4px 4px 0px #0F0F0F;
+    border-radius: 8px;
+    background-color: #FFD700;
+    color: #0F0F0F;
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.2s ease;
+  }
+
+  .brutal-btn:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0px #0F0F0F;
+  }
+
+  .brutal-btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0px #0F0F0F;
+  }
+
+  /* Secondary / Color Button Variants */
+  .brutal-btn-blue {
+    background-color: #4CB8C4;
+  }
+  .brutal-btn-pink {
+    background-color: #F781BE;
+  }
+  .brutal-btn-teal {
+    background-color: #5BA4A4;
+  }
+  .brutal-btn-white {
+    background-color: #ffffff;
+  }
+
+  /* Brutal Input */
+  .brutal-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background-color: #ffffff;
+    border: 4px solid #0F0F0F;
+    border-radius: 8px;
+    box-shadow: 3px 3px 0px #0F0F0F;
+    font-weight: 600;
+    outline: none;
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+  }
+
+  .brutal-input:focus {
+    box-shadow: 5px 5px 0px #4CB8C4;
+    transform: translate(-1px, -1px);
+  }
+
+  /* Brutal Badge */
+  .brutal-badge {
+    display: inline-block;
+    padding: 0.25rem 0.6rem;
+    font-size: 0.8rem;
+    font-weight: 800;
+    border: 3px solid #0F0F0F;
+    box-shadow: 2px 2px 0px #0F0F0F;
+    border-radius: 6px;
+    text-transform: uppercase;
+  }
+}

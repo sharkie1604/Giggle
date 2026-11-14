@@ -1,0 +1,194 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  CLIENT
+  FREELANCER
+  ADMIN
+}
+
+enum TechCategory {
+  FRONTEND
+  BACKEND
+  FULLSTACK
+  MOBILE
+  AI_ML
+  DEVOPS
+}
+
+enum JobStatus {
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum ProposalStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum EscrowStatus {
+  PENDING
+  FUNDED
+  RELEASED
+  DISPUTED
+}
+
+enum TransactionType {
+  DEPOSIT
+  PAYOUT
+  REFUND
+}
+
+enum TransactionStatus {
+  INITIATED
+  SUCCESS
+  FAILED
+}
+
+enum SubmissionStatus {
+  SUBMITTED
+  REVISION_REQUESTED
+  APPROVED
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique @db.VarChar(254)
+  passwordHash String
+  name         String   @db.VarChar(100)
+  role         Role     @default(FREELANCER)
+  bio          String?  @db.Text
+  skills       String[]
+  githubUrl    String?  @db.VarChar(255)
+  portfolioUrl String?  @db.VarChar(255)
+  upiId        String?  @db.VarChar(100)
+  createdAt    DateTime @default(now())
+
+  jobsPosted      Job[]         @relation("ClientJobs")
+  proposals       Proposal[]    @relation("FreelancerProposals")
+  escrows         Escrow[]      @relation("FreelancerEscrow")
+  transactions    Transaction[]
+  submissions     Submission[]  @relation("FreelancerSubmissions")
+  reviewsGiven    Review[]      @relation("GivenReviews")
+  reviewsReceived Review[]      @relation("ReceivedReviews")
+
+  @@map("users")
+}
+
+model Job {
+  id             Int          @id @default(autoincrement())
+  clientId       Int
+  title          String       @db.VarChar(150)
+  description    String       @db.Text
+  category       TechCategory
+  requiredSkills String[]
+  budget         Decimal      @db.Decimal(10, 2)
+  deadline       DateTime
+  status         JobStatus    @default(OPEN)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  client      User         @relation("ClientJobs", fields: [clientId], references: [id], onDelete: Restrict)
+  proposals   Proposal[]
+  escrow      Escrow?
+  submissions Submission[]
+  reviews     Review[]
+
+  @@index([status, category])
+  @@map("jobs")
+}
+
+model Proposal {
+  id            Int            @id @default(autoincrement())
+  jobId         Int
+  freelancerId  Int
+  proposalNote  String         @db.Text
+  estimatedDays Int
+  status        ProposalStatus @default(PENDING)
+  createdAt     DateTime       @default(now())
+
+  job        Job  @relation(fields: [jobId], references: [id], onDelete: Restrict)
+  freelancer User @relation("FreelancerProposals", fields: [freelancerId], references: [id], onDelete: Restrict)
+
+  @@unique([jobId, freelancerId])
+  @@map("proposals")
+}
+
+model Escrow {
+  id            Int          @id @default(autoincrement())
+  jobId         Int          @unique
+  freelancerId  Int
+  amount        Decimal      @db.Decimal(10, 2)
+  status        EscrowStatus @default(PENDING)
+  disputeReason String?      @db.Text
+  submittedAt   DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  job          Job           @relation(fields: [jobId], references: [id], onDelete: Restrict)
+  freelancer   User          @relation("FreelancerEscrow", fields: [freelancerId], references: [id], onDelete: Restrict)
+  transactions Transaction[]
+
+  @@map("escrows")
+}
+
+model Transaction {
+  id                Int               @id @default(autoincrement())
+  escrowId          Int
+  userId            Int
+  razorpayOrderId   String            @unique @db.VarChar(100)
+  razorpayPaymentId String?           @unique @db.VarChar(100)
+  razorpaySignature String?           @db.Text
+  amount            Decimal           @db.Decimal(10, 2)
+  type              TransactionType
+  status            TransactionStatus @default(INITIATED)
+  createdAt         DateTime          @default(now())
+
+  escrow Escrow @relation(fields: [escrowId], references: [id], onDelete: Restrict)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId, createdAt])
+  @@map("transactions")
+}
+
+model Submission {
+  id           Int              @id @default(autoincrement())
+  jobId        Int
+  freelancerId Int
+  deliveryUrl  String           @db.VarChar(255)
+  notes        String           @db.Text
+  status       SubmissionStatus @default(SUBMITTED)
+  createdAt    DateTime         @default(now())
+
+  job        Job  @relation(fields: [jobId], references: [id], onDelete: Restrict)
+  freelancer User @relation("FreelancerSubmissions", fields: [freelancerId], references: [id], onDelete: Restrict)
+
+  @@map("submissions")
+}
+
+model Review {
+  id         Int      @id @default(autoincrement())
+  jobId      Int
+  reviewerId Int
+  revieweeId Int
+  rating     Int
+  comment    String?  @db.Text
+  createdAt  DateTime @default(now())
+
+  job      Job  @relation(fields: [jobId], references: [id], onDelete: Restrict)
+  reviewer User @relation("GivenReviews", fields: [reviewerId], references: [id], onDelete: Restrict)
+  reviewee User @relation("ReceivedReviews", fields: [revieweeId], references: [id], onDelete: Restrict)
+
+  @@unique([jobId, reviewerId])
+  @@map("reviews")
+}
