@@ -1,54 +1,73 @@
 import jwt from 'jsonwebtoken';
 import { env } from '../config/env.js';
 import { ApiError } from '../utils/ApiError.js';
-import { prisma } from '../config/db.js';
 
-export const verifyJwt = async (req, res, next) => {
+/**
+ * Authentication Middleware: Extracts & verifies Bearer JWT
+ * Attaches `{ id: decoded.userId, role: decoded.role }` to `req.user`
+ */
+export const authenticate = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return next(
+      ApiError.unauthorized('Authentication required: Bearer token is missing or malformed')
+    );
+  }
+
+  const token = authHeader.split(' ')[1];
+
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw ApiError.unauthorized('Access token is missing or malformed');
-    }
-
-    const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, env.JWT_SECRET);
+    const userId = decoded.userId || decoded.id;
 
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.id },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        skills: true,
-      },
-    });
-
-    if (!user) {
-      throw ApiError.unauthorized('User corresponding to token no longer exists');
+    if (!userId || !decoded.role) {
+      return next(ApiError.unauthorized('Invalid token payload: Missing user identity or role'));
     }
 
-    req.user = user;
+    req.user = {
+      id: userId,
+      role: decoded.role,
+    };
+
     next();
   } catch (error) {
-    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
-      next(ApiError.unauthorized('Invalid or expired token'));
-    } else {
-      next(error);
+    if (error.name === 'TokenExpiredError') {
+      return next(ApiError.unauthorized('Authentication failed: Access token has expired'));
     }
+    return next(ApiError.unauthorized('Authentication failed: Invalid access token'));
   }
 };
 
-export const requireRole = (...roles) => {
+/**
+ * Role-Based Access Control Middleware Factory
+ * Restricts route to specific user roles (e.g. 'CLIENT', 'FREELANCER', 'ADMIN')
+ */
+export const authorizeRoles = (...roles) => {
   return (req, res, next) => {
     if (!req.user) {
-      return next(ApiError.unauthorized('Authentication required'));
+      return next(ApiError.unauthorized('Authentication required before checking permissions'));
     }
+
     if (!roles.includes(req.user.role)) {
       return next(
-        ApiError.forbidden(`Access denied: Requires one of [${roles.join(', ')}] role`)
+        ApiError.forbidden(
+          `Forbidden: Insufficient permissions. Required one of [${roles.join(', ')}], current role is '${req.user.role}'`
+        )
       );
     }
+
     next();
   };
+};
+
+// Aliases for compatibility
+export const verifyJwt = authenticate;
+export const requireRole = authorizeRoles;
+
+export default {
+  authenticate,
+  authorizeRoles,
+  verifyJwt,
+  requireRole,
 };

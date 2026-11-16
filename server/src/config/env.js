@@ -1,15 +1,37 @@
 import dotenv from 'dotenv';
-dotenv.config();
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { z } from 'zod';
 
-export const env = {
-  PORT: process.env.PORT || 5000,
-  NODE_ENV: process.env.NODE_ENV || 'development',
-  DATABASE_URL: process.env.DATABASE_URL,
-  DIRECT_URL: process.env.DIRECT_URL,
-  JWT_SECRET: process.env.JWT_SECRET || 'dev-secret-key',
-  JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d',
-  CLIENT_URL: process.env.CLIENT_URL || 'http://localhost:5173',
-  RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID || '',
-  RAZORPAY_KEY_SECRET: process.env.RAZORPAY_KEY_SECRET || '',
-  RAZORPAY_WEBHOOK_SECRET: process.env.RAZORPAY_WEBHOOK_SECRET || '',
-};
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load .env from process.cwd() as well as server/.env relative to this module
+dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+
+const envSchema = z.object({
+  PORT: z.coerce.number().default(5000),
+  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
+  DIRECT_URL: z.string().min(1, 'DIRECT_URL is required'),
+  JWT_SECRET: z.string().min(16, 'JWT_SECRET must be at least 16 characters long'),
+  JWT_EXPIRES_IN: z.string().default('7d'),
+  CLIENT_URL: z.string().url('CLIENT_URL must be a valid URL').default('http://localhost:5173'),
+  RAZORPAY_KEY_ID: z.string().optional().default(''),
+  RAZORPAY_KEY_SECRET: z.string().optional().default(''),
+  RAZORPAY_WEBHOOK_SECRET: z.string().optional().default(''),
+});
+
+const parsedEnv = envSchema.safeParse(process.env);
+
+if (!parsedEnv.success) {
+  const formattedErrors = parsedEnv.error.issues
+    .map((issue) => `  - [${issue.path.join('.')}]: ${issue.message}`)
+    .join('\n');
+  console.error(`\n❌ CRITICAL: Environment configuration validation failed:\n${formattedErrors}\n`);
+  process.exit(1);
+}
+
+export const env = parsedEnv.data;
+export default env;
