@@ -7,6 +7,11 @@ import {
   updateJob,
   cancelJob,
 } from '../controllers/job.controller.js';
+import {
+  submitProposal,
+  getJobProposals,
+} from '../controllers/proposal.controller.js';
+import { createProposalSchema } from './proposal.routes.js';
 import { authenticate, authorizeRoles } from '../middleware/auth.middleware.js';
 import {
   validate,
@@ -152,6 +157,24 @@ router.delete(
   authorizeRoles('CLIENT'),
   validate({ params: jobIdParamSchema }),
   cancelJob
+);
+
+// POST /api/jobs/:id/proposals -> Freelancer submits technical proposal
+router.post(
+  '/:id/proposals',
+  authenticate,
+  authorizeRoles('FREELANCER'),
+  validate({ params: jobIdParamSchema, body: createProposalSchema }),
+  submitProposal
+);
+
+// GET /api/jobs/:id/proposals -> Client owner views all proposals on gig
+router.get(
+  '/:id/proposals',
+  authenticate,
+  authorizeRoles('CLIENT'),
+  validate({ params: jobIdParamSchema }),
+  getJobProposals
 );
 
 export default router;
