@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import Layout from './components/layout/Layout';
 
@@ -29,8 +29,10 @@ export default function App() {
             <Route path="/post-job" element={<PostJob />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/users/:id" element={<Profile />} />
             <Route path="/transactions" element={<Transactions />} />
             <Route path="/admin/disputes" element={<AdminDisputes />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Layout>
       </AuthProvider>

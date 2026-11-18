@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import api from '../services/api';
+import { Shield, Lock, AlertCircle } from 'lucide-react';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -15,12 +15,15 @@ export default function Login() {
     e.preventDefault();
     setError('');
     setLoading(true);
+
     try {
-      const res = await api.post('/auth/login', { email, password });
-      login(res.data.user, res.data.token);
+      await login({ email: email.trim(), password });
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed. Please check credentials.');
+      const apiMsg =
+        err.response?.data?.message ||
+        'Invalid email or password. Please check your credentials.';
+      setError(apiMsg);
     } finally {
       setLoading(false);
     }
@@ -28,31 +31,48 @@ export default function Login() {
 
   return (
     <div className="max-w-md mx-auto my-12 px-4">
-      <div className="brutal-card p-8 bg-white">
-        <h2 className="text-3xl font-extrabold mb-2 font-heading text-center">WELCOME BACK</h2>
-        <p className="text-center font-medium text-gray-600 mb-6">Enter your credentials to continue</p>
+      <div className="brutal-card p-8 bg-white border-4 border-ink shadow-brutal">
+        {/* Header Icon & Title */}
+        <div className="flex justify-center mb-2">
+          <div className="w-12 h-12 rounded-xl bg-jake border-3 border-ink shadow-brutal-sm flex items-center justify-center text-ink">
+            <Lock className="w-6 h-6" />
+          </div>
+        </div>
 
+        <h2 className="text-3xl font-extrabold mb-1 font-heading text-center text-ink">
+          WELCOME BACK
+        </h2>
+        <p className="text-center font-medium text-gray-700 text-sm mb-6">
+          Access your tech gig escrow dashboard
+        </p>
+
+        {/* Error Banner */}
         {error && (
-          <div className="brutal-badge bg-bubblegum text-ink w-full text-center py-2 mb-4">
-            {error}
+          <div className="mb-6 p-3 bg-bubblegum border-3 border-ink rounded-lg shadow-brutal-sm flex items-start gap-2 text-ink">
+            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+            <div className="text-sm font-bold">{error}</div>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block font-bold mb-1 uppercase text-xs">Email Address</label>
+            <label className="block font-bold mb-1 uppercase text-xs text-ink">
+              Email Address
+            </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
               className="brutal-input"
-              placeholder="developer@techgig.in"
+              placeholder="e.g. developer@techgig.in"
             />
           </div>
 
           <div>
-            <label className="block font-bold mb-1 uppercase text-xs">Password</label>
+            <label className="block font-bold mb-1 uppercase text-xs text-ink">
+              Password
+            </label>
             <input
               type="password"
               value={password}
@@ -66,15 +86,18 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="brutal-btn w-full bg-jake mt-4 disabled:opacity-50"
+            className="brutal-btn w-full bg-jake text-ink font-heading font-black tracking-wide text-sm py-3 mt-4 disabled:opacity-50"
           >
-            {loading ? 'AUTHENTICATING...' : 'LOG IN'}
+            {loading ? 'AUTHENTICATING...' : 'LOG IN TO ESCROW'}
           </button>
         </form>
 
-        <p className="text-center mt-6 text-sm font-semibold">
-          Don't have an account?{' '}
-          <Link to="/register" className="text-finn underline hover:text-ink">
+        <p className="text-center mt-6 text-sm font-semibold text-gray-700">
+          Don't have an account yet?{' '}
+          <Link
+            to="/register"
+            className="text-ink font-bold underline hover:text-finn transition-colors"
+          >
             Register here
           </Link>
         </p>
