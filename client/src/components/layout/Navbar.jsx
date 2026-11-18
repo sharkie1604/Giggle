@@ -34,7 +34,7 @@ export default function Navbar() {
             ⚡
           </div>
           <span className="font-heading font-black text-2xl tracking-tight text-ink">
-            BMO <span className="text-finn">ESCROW</span>
+            Giggle
           </span>
         </Link>
 
@@ -54,7 +54,7 @@ export default function Navbar() {
               className="flex items-center gap-1 font-bold uppercase text-xs text-ink hover:text-finn transition-colors tracking-wide px-2 py-1"
             >
               <PlusCircle className="w-4 h-4" />
-              Post Gig
+              Post a Gig
             </Link>
           )}
 
@@ -73,7 +73,7 @@ export default function Navbar() {
                 className="flex items-center gap-1 font-bold uppercase text-xs hover:text-finn transition-colors tracking-wide px-2 py-1"
               >
                 <Receipt className="w-4 h-4" />
-                Ledger
+                Payments
               </Link>
             </>
           )}

@@ -110,13 +110,13 @@ export default function JobFeed() {
         <div>
           <div className="inline-flex items-center gap-1.5 brutal-badge bg-jake text-ink text-xs mb-2">
             <Sparkles className="w-3.5 h-3.5" />
-            FIXED-PRICE ESCROW VAULTS
+            FIXED-BUDGET TECH GIGS
           </div>
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-black font-heading text-ink">
             OPEN TECH GIGS
           </h1>
           <p className="text-sm sm:text-base font-medium text-gray-700 mt-1">
-            Browse verified Indian tech gigs with guaranteed milestone escrows.
+            Browse verified tech gigs with guaranteed, protected payments.
           </p>
         </div>
 
@@ -127,7 +127,7 @@ export default function JobFeed() {
             className="brutal-btn bg-jake text-ink text-sm py-2.5 px-5 shadow-brutal flex items-center gap-2 self-stretch md:self-auto justify-center"
           >
             <PlusCircle className="w-4 h-4" />
-            + POST A TECH GIG
+            + POST A GIG
           </Link>
         )}
       </div>
@@ -210,7 +210,7 @@ export default function JobFeed() {
           <div className="inline-block p-6 brutal-card bg-paper">
             <div className="w-10 h-10 border-4 border-ink border-t-finn rounded-full animate-spin mx-auto mb-3"></div>
             <p className="font-heading font-black text-lg text-ink">
-              SCANNING OPEN GIGS...
+              LOADING GIGS...
             </p>
           </div>
         </div>
@@ -231,14 +231,13 @@ export default function JobFeed() {
                 No Gigs in this Category Yet
               </h3>
               <p className="text-sm font-medium text-gray-600 mb-6">
-                Be the first client to publish an escrow-backed milestone gig in
-                this discipline!
+                Be the first client to post a fixed-budget gig in this category!
               </p>
               <Link
                 to="/post-job"
                 className="brutal-btn bg-jake text-xs py-2.5 px-6 shadow-brutal-sm inline-block"
               >
-                + CREATE FIRST GIG
+                + POST FIRST GIG
               </Link>
             </>
           ) : (

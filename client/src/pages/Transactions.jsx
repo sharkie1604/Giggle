@@ -24,13 +24,13 @@ export default function Transactions() {
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-4xl font-extrabold font-heading">ESCROW TRANSACTIONS</h1>
-        <p className="font-medium text-gray-700">Cryptographically verified UPI transactions ledger</p>
+        <h1 className="text-4xl font-extrabold font-heading">PAYMENT HISTORY</h1>
+        <p className="font-medium text-gray-700">Verified UPI deposits, releases, and payout history</p>
       </div>
 
       <div className="brutal-card p-6 bg-white">
         {loading ? (
-          <div className="text-center py-10 font-bold font-mono">LOADING TRANSACTION LEDGER...</div>
+          <div className="text-center py-10 font-bold font-mono">LOADING PAYMENT HISTORY...</div>
         ) : transactions.length === 0 ? (
           <div className="text-center py-12">
             <ShieldCheck className="w-12 h-12 mx-auto text-bmo mb-3" />

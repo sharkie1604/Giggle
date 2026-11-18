@@ -32,11 +32,14 @@ export default function Register() {
     setLoading(true);
 
     try {
-      // Parse comma-separated skills into clean trimmed array
-      const skills = formData.skillsInput
-        .split(',')
-        .map((s) => s.trim())
-        .filter((s) => s.length > 0);
+      // Parse comma-separated skills into clean trimmed array (freelancer only)
+      const skills =
+        formData.role === 'FREELANCER'
+          ? formData.skillsInput
+              .split(',')
+              .map((s) => s.trim())
+              .filter((s) => s.length > 0)
+          : [];
 
       const payload = {
         name: formData.name.trim(),
@@ -55,10 +58,13 @@ export default function Register() {
         navigate('/dashboard');
       }
     } catch (err) {
-      const apiMsg =
-        err.response?.data?.message ||
-        (err.response?.data?.errors?.[0]?.message) ||
-        'Registration failed. Please check your inputs.';
+      const data = err.response?.data;
+      let apiMsg = 'Registration failed. Please check your inputs.';
+      if (data?.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+        apiMsg = data.errors.map((e) => e.message || e).join('. ');
+      } else if (data?.message) {
+        apiMsg = data.message;
+      }
       setError(apiMsg);
     } finally {
       setLoading(false);
@@ -72,14 +78,14 @@ export default function Register() {
         <div className="flex justify-center mb-2">
           <span className="brutal-badge bg-jake text-ink text-xs font-black flex items-center gap-1">
             <Sparkles className="w-3.5 h-3.5" />
-            NO BIDDING • FIXED PRICE ESCROW
+            NO BIDDING • PROTECTED PAYMENTS
           </span>
         </div>
         <h2 className="text-3xl font-extrabold mb-1 font-heading text-center text-ink">
-          JOIN THE ESCROW
+          JOIN GIGGLE
         </h2>
         <p className="text-center font-medium text-gray-700 text-sm mb-6">
-          Create your Indian developer or client profile
+          Create your client or freelancer account
         </p>
 
         {/* Error Banner */}
@@ -107,7 +113,7 @@ export default function Register() {
                 }`}
               >
                 <div className="font-heading font-black text-sm text-ink">
-                  💻 WORK AS DEV
+                  💻 WORK AS FREELANCER
                 </div>
                 <div className="text-[11px] font-semibold text-gray-700 mt-0.5">
                   Freelancer Profile
@@ -127,7 +133,7 @@ export default function Register() {
                   🚀 HIRE TALENT
                 </div>
                 <div className="text-[11px] font-semibold text-gray-700 mt-0.5">
-                  Client / Employer
+                  Client Account
                 </div>
               </button>
             </div>
@@ -185,23 +191,25 @@ export default function Register() {
             />
           </div>
 
-          {/* Skills (Optional / Comma-separated) */}
-          <div>
-            <label className="block font-bold mb-1 uppercase text-xs text-ink flex items-center justify-between">
-              <span>Technical Skills (Optional)</span>
-              <span className="text-[10px] text-gray-500 font-normal">
-                Comma-separated
-              </span>
-            </label>
-            <input
-              type="text"
-              name="skillsInput"
-              value={formData.skillsInput}
-              onChange={handleChange}
-              className="brutal-input"
-              placeholder="React, Node.js, TypeScript, PostgreSQL"
-            />
-          </div>
+          {/* Skills (Optional / Comma-separated) — Rendered ONLY for FREELANCER */}
+          {formData.role === 'FREELANCER' && (
+            <div>
+              <label className="block font-bold mb-1 uppercase text-xs text-ink flex items-center justify-between">
+                <span>Technical Skills (Optional)</span>
+                <span className="text-[10px] text-gray-500 font-normal">
+                  Comma-separated
+                </span>
+              </label>
+              <input
+                type="text"
+                name="skillsInput"
+                value={formData.skillsInput}
+                onChange={handleChange}
+                className="brutal-input"
+                placeholder="React, Node.js, TypeScript, PostgreSQL"
+              />
+            </div>
+          )}
 
           {/* Submit Button */}
           <button
@@ -209,7 +217,7 @@ export default function Register() {
             disabled={loading}
             className="brutal-btn w-full bg-finn text-ink font-heading font-black tracking-wide text-sm py-3 mt-4 disabled:opacity-50"
           >
-            {loading ? 'CREATING ACCOUNT...' : 'CREATE ACCOUNT & ENTER ESCROW'}
+            {loading ? 'CREATING ACCOUNT...' : 'CREATE ACCOUNT'}
           </button>
         </form>
 

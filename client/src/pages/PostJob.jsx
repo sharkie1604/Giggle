@@ -53,7 +53,7 @@ export default function PostJob() {
             FREELANCER PROFILE DETECTED
           </h2>
           <p className="text-sm font-medium text-gray-700 mb-6 leading-relaxed">
-            Only registered <span className="font-bold text-ink">Client</span> accounts can publish fixed-budget gigs and fund escrow vaults. Freelancers apply to open gigs.
+            Only registered <span className="font-bold text-ink">Client</span> accounts can post fixed-budget gigs and hire talent. Freelancers apply to open gigs.
           </p>
           <div className="flex flex-col gap-2">
             <Link to="/jobs" className="brutal-btn bg-jake text-xs py-2.5">
@@ -130,10 +130,13 @@ export default function PostJob() {
       const res = await api.post('/jobs', payload);
       navigate(`/jobs/${res.data.job.id}`);
     } catch (err) {
-      const apiMsg =
-        err.response?.data?.message ||
-        err.response?.data?.errors?.[0]?.message ||
-        'Failed to publish gig. Please check your fields.';
+      const data = err.response?.data;
+      let apiMsg = 'Failed to post gig. Please check your fields.';
+      if (data?.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+        apiMsg = data.errors.map((e) => e.message || e).join('. ');
+      } else if (data?.message) {
+        apiMsg = data.message;
+      }
       setError(apiMsg);
     } finally {
       setLoading(false);
@@ -146,13 +149,13 @@ export default function PostJob() {
         {/* Header */}
         <div className="inline-flex items-center gap-1.5 brutal-badge bg-jake text-ink text-xs mb-3">
           <Sparkles className="w-3.5 h-3.5" />
-          FIXED-PRICE MILESTONE CONTRACT
+          FIXED BUDGET GIG
         </div>
         <h1 className="text-3xl sm:text-4xl font-black font-heading text-ink mb-1">
           POST A TECH GIG
         </h1>
         <p className="font-medium text-gray-700 text-sm mb-6">
-          Set a non-negotiable budget in INR. Freelancers compete on technical execution and delivery days—no price bidding wars.
+          Set a fixed budget in INR. Freelancers apply with their technical approach and timeline—no price bidding wars.
         </p>
 
         {/* Error Banner */}
@@ -185,7 +188,7 @@ export default function PostJob() {
           {/* Category */}
           <div>
             <label className="block font-bold mb-1 uppercase text-xs text-ink">
-              Technical Discipline *
+              Category *
             </label>
             <select
               name="category"
@@ -204,7 +207,7 @@ export default function PostJob() {
           {/* Budget */}
           <div>
             <label className="block font-bold mb-1 uppercase text-xs text-ink flex items-center justify-between">
-              <span>Fixed Escrow Budget (INR) *</span>
+              <span>Fixed Budget (INR) *</span>
               <span className="text-[10px] text-gray-500 font-semibold">
                 No bidding allowed
               </span>
@@ -227,7 +230,7 @@ export default function PostJob() {
               />
             </div>
             <p className="text-[11px] font-semibold text-gray-500 mt-1">
-              ⚠️ Invariant Rule: Once any freelancer submits a proposal, this budget is frozen permanently to protect against bait-and-switch.
+              Note: To keep things fair for applicants, your budget cannot be changed once proposals are submitted.
             </p>
           </div>
 
@@ -268,7 +271,7 @@ export default function PostJob() {
           {/* Description */}
           <div>
             <label className="block font-bold mb-1 uppercase text-xs text-ink">
-              Technical Scope & Deliverables * (Min 20 chars)
+              Gig Description & Deliverables * (Min 20 chars)
             </label>
             <textarea
               name="description"
@@ -279,7 +282,7 @@ export default function PostJob() {
               maxLength={5000}
               rows="5"
               className="brutal-input resize-y text-sm"
-              placeholder="Detail technical requirements, expected deliverables, API constraints, and acceptance criteria..."
+              placeholder="Describe the project requirements, deliverables, and timeline..."
             ></textarea>
           </div>
 
@@ -289,7 +292,7 @@ export default function PostJob() {
             disabled={loading}
             className="brutal-btn w-full bg-jake text-ink text-base py-3 mt-4 disabled:opacity-50 shadow-brutal-sm cursor-pointer"
           >
-            {loading ? 'PUBLISHING GIG...' : 'PUBLISH FIXED-PRICE GIG'}
+            {loading ? 'POSTING GIG...' : 'POST GIG'}
           </button>
         </form>
       </div>

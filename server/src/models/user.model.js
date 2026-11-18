@@ -137,14 +137,21 @@ export const getPublicUserProfile = async (userId) => {
       },
       jobsPosted: {
         where: {
-          status: 'COMPLETED',
+          status: {
+            in: ['OPEN', 'COMPLETED'],
+          },
         },
         select: {
           id: true,
           title: true,
           budget: true,
           category: true,
+          status: true,
+          createdAt: true,
           updatedAt: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
         },
       },
     },
@@ -167,13 +174,15 @@ export const getPublicUserProfile = async (userId) => {
   // Format completed gigs cleanly for clickable gig cards (/jobs/:id)
   const completedGigs =
     user.role === 'CLIENT'
-      ? user.jobsPosted.map((job) => ({
-          id: job.id,
-          title: job.title,
-          budget: Number(job.budget),
-          category: job.category,
-          updatedAt: job.updatedAt,
-        }))
+      ? user.jobsPosted
+          .filter((job) => job.status === 'COMPLETED')
+          .map((job) => ({
+            id: job.id,
+            title: job.title,
+            budget: Number(job.budget),
+            category: job.category,
+            updatedAt: job.updatedAt,
+          }))
       : user.escrows
           .map((e) => e.job)
           .filter(Boolean)
@@ -184,6 +193,20 @@ export const getPublicUserProfile = async (userId) => {
             category: job.category,
             updatedAt: job.updatedAt,
           }));
+
+  // Jobs posted by client (OPEN and COMPLETED) for client profile view
+  const jobsPosted =
+    user.role === 'CLIENT'
+      ? user.jobsPosted.map((job) => ({
+          id: job.id,
+          title: job.title,
+          budget: Number(job.budget),
+          category: job.category,
+          status: job.status,
+          createdAt: job.createdAt,
+          updatedAt: job.updatedAt,
+        }))
+      : [];
 
   return {
     id: user.id,
@@ -198,6 +221,7 @@ export const getPublicUserProfile = async (userId) => {
     totalReviews,
     reviewsReceived: user.reviewsReceived,
     completedGigs,
+    jobsPosted,
   };
 };
 

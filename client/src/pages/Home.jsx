@@ -11,16 +11,16 @@ export default function Home() {
       {/* Hero Section */}
       <section className="text-center py-12 md:py-16">
         <div className="inline-block brutal-badge bg-jake text-ink mb-6 text-sm">
-          🇮🇳 India's #1 Fixed-Price Tech Gig Escrow
+          🇮🇳 Fixed-Price Indian Tech Gigs
         </div>
         <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 font-heading">
           NO BIDDING WARS. <br />
           <span className="bg-bubblegum px-3 py-1 border-4 border-ink shadow-brutal inline-block my-2">
-            PURE TECH ESCROW.
+            PROTECTED PAYMENTS.
           </span>
         </h1>
         <p className="text-lg md:text-xl font-medium max-w-2xl mx-auto mb-10 text-gray-800">
-          Fixed budgets, verified developers, and guaranteed payouts secured by our interactive BMO Escrow Vault.
+          Fixed budgets, verified developers, and guaranteed payouts with Giggle protected payments.
         </p>
         <div className="flex flex-wrap gap-4 justify-center">
           <Link to="/jobs" className="brutal-btn bg-jake text-ink flex items-center gap-2 text-lg">
@@ -30,7 +30,7 @@ export default function Home() {
           {/* Role-Aware Secondary Hero Button */}
           {isAuthenticated && user?.role === 'CLIENT' ? (
             <Link to="/post-job" className="brutal-btn bg-finn text-ink flex items-center gap-2 text-lg">
-              <PlusCircle className="w-5 h-5" /> Post a Fixed Gig
+              <PlusCircle className="w-5 h-5" /> Post a Gig
             </Link>
           ) : isAuthenticated && user?.role === 'FREELANCER' ? (
             <Link to="/dashboard" className="brutal-btn bg-finn text-ink flex items-center gap-2 text-lg">
@@ -60,9 +60,9 @@ export default function Home() {
           <div className="w-12 h-12 rounded-lg bg-bmo border-3 border-ink shadow-brutal-sm flex items-center justify-center mb-4">
             <ShieldCheck className="w-6 h-6 text-ink" />
           </div>
-          <h3 className="text-2xl font-bold mb-2 font-heading">BMO Escrow Vault</h3>
+          <h3 className="text-2xl font-bold mb-2 font-heading">Protected Payments</h3>
           <p className="font-medium text-gray-700">
-            Funds are locked in escrow via Razorpay UPI test mode before development starts. Zero payment risk.
+            Funds are held safely before work starts and released when you approve the final delivery.
           </p>
         </div>
 
@@ -72,7 +72,7 @@ export default function Home() {
           </div>
           <h3 className="text-2xl font-bold mb-2 font-heading">Tech Gigs Only</h3>
           <p className="font-medium text-gray-700">
-            Exclusively Frontend, Backend, Fullstack, Mobile, AI/ML, and DevOps. Built by devs, for devs.
+            Exclusively Frontend, Backend, Fullstack, Mobile, AI/ML, and DevOps. Built for high-quality engineering.
           </p>
         </div>
       </section>

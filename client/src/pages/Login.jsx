@@ -20,9 +20,13 @@ export default function Login() {
       await login({ email: email.trim(), password });
       navigate('/dashboard');
     } catch (err) {
-      const apiMsg =
-        err.response?.data?.message ||
-        'Invalid email or password. Please check your credentials.';
+      const data = err.response?.data;
+      let apiMsg = 'Invalid email or password. Please check your credentials.';
+      if (data?.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+        apiMsg = data.errors.map((e) => e.message || e).join('. ');
+      } else if (data?.message) {
+        apiMsg = data.message;
+      }
       setError(apiMsg);
     } finally {
       setLoading(false);
@@ -43,7 +47,7 @@ export default function Login() {
           WELCOME BACK
         </h2>
         <p className="text-center font-medium text-gray-700 text-sm mb-6">
-          Access your tech gig escrow dashboard
+          Sign in to your Giggle account
         </p>
 
         {/* Error Banner */}
@@ -88,7 +92,7 @@ export default function Login() {
             disabled={loading}
             className="brutal-btn w-full bg-jake text-ink font-heading font-black tracking-wide text-sm py-3 mt-4 disabled:opacity-50"
           >
-            {loading ? 'AUTHENTICATING...' : 'LOG IN TO ESCROW'}
+            {loading ? 'AUTHENTICATING...' : 'SIGN IN'}
           </button>
         </form>
 
