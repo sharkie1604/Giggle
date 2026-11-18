@@ -8,7 +8,11 @@ import {
   cancelJob,
 } from '../controllers/job.controller.js';
 import { authenticate, authorizeRoles } from '../middleware/auth.middleware.js';
-import { validate, positiveIntParamSchema } from '../middleware/validate.middleware.js';
+import {
+  validate,
+  positiveIntParamSchema,
+  nonEmptyObject,
+} from '../middleware/validate.middleware.js';
 
 const router = Router();
 
@@ -54,6 +58,52 @@ export const createJobSchema = z
   })
   .strict();
 
+export const updateJobSchema = nonEmptyObject(
+  z
+    .object({
+      title: z
+        .string()
+        .min(5, 'Title must be at least 5 characters')
+        .max(150, 'Title must not exceed 150 characters')
+        .optional(),
+      description: z
+        .string()
+        .min(20, 'Description must be at least 20 characters')
+        .max(5000, 'Description must not exceed 5000 characters')
+        .optional(),
+      category: z
+        .enum(['FRONTEND', 'BACKEND', 'FULLSTACK', 'MOBILE', 'AI_ML', 'DEVOPS'], {
+          errorMap: () => ({
+            message:
+              "Category must be one of: 'FRONTEND', 'BACKEND', 'FULLSTACK', 'MOBILE', 'AI_ML', 'DEVOPS'",
+          }),
+        })
+        .optional(),
+      requiredSkills: z
+        .array(
+          z
+            .string()
+            .min(1, 'Skill must not be empty')
+            .max(50, 'Skill must not exceed 50 characters')
+        )
+        .min(1, 'At least 1 required skill must be specified')
+        .max(15, 'Maximum 15 required skills allowed')
+        .optional(),
+      budget: z.coerce
+        .number()
+        .positive('Budget must be a positive number')
+        .max(10000000, 'Budget cannot exceed ₹10,000,000')
+        .optional(),
+      deadline: z.coerce
+        .date()
+        .refine((d) => d > new Date(), {
+          message: 'Deadline must be in the future',
+        })
+        .optional(),
+    })
+    .strict()
+);
+
 export const listJobsQuerySchema = z
   .object({
     category: z
@@ -86,15 +136,16 @@ router.get('/', validate({ query: listJobsQuerySchema }), getJobs);
 // GET /api/jobs/:id -> Public gig detail view
 router.get('/:id', validate({ params: jobIdParamSchema }), getJobById);
 
-// Placeholders for Task 3.2 (Job Cancellation & Bait-and-Switch Budget Freeze)
+// PATCH /api/jobs/:id -> Client owner updates gig (Bait-and-Switch Budget Freeze enforced)
 router.patch(
   '/:id',
   authenticate,
   authorizeRoles('CLIENT'),
-  validate({ params: jobIdParamSchema }),
+  validate({ params: jobIdParamSchema, body: updateJobSchema }),
   updateJob
 );
 
+// DELETE /api/jobs/:id -> Client owner soft cancels gig (status = 'CANCELLED')
 router.delete(
   '/:id',
   authenticate,

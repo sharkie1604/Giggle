@@ -135,8 +135,84 @@ export const findJobById = async (jobId) => {
   });
 };
 
+/**
+ * findJobWithProposalCount — Queries job with proposals count.
+ * Used for lifecycle verification, IDOR ownership check, and proposal budget lock.
+ *
+ * @param {number} jobId
+ * @returns {Promise<Job|null>}
+ */
+export const findJobWithProposalCount = async (jobId) => {
+  return prisma.job.findUnique({
+    where: { id: jobId },
+    include: {
+      _count: {
+        select: {
+          proposals: true,
+        },
+      },
+    },
+  });
+};
+
+/**
+ * updateJobById — Updates mutable gig fields.
+ *
+ * @param {number} jobId
+ * @param {object} updateData
+ * @returns {Promise<Job>}
+ */
+export const updateJobById = async (jobId, updateData) => {
+  const allowed = ['title', 'description', 'category', 'requiredSkills', 'budget', 'deadline'];
+  const data = {};
+
+  for (const key of allowed) {
+    if (updateData[key] !== undefined) {
+      if (key === 'title' || key === 'description') {
+        data[key] = updateData[key].trim();
+      } else if (key === 'deadline') {
+        data[key] = new Date(updateData[key]);
+      } else {
+        data[key] = updateData[key];
+      }
+    }
+  }
+
+  return prisma.job.update({
+    where: { id: jobId },
+    data,
+    include: {
+      client: {
+        select: {
+          id: true,
+          name: true,
+          role: true,
+        },
+      },
+    },
+  });
+};
+
+/**
+ * cancelJobById — Sets gig status to CANCELLED (soft cancellation).
+ *
+ * @param {number} jobId
+ * @returns {Promise<Job>}
+ */
+export const cancelJobById = async (jobId) => {
+  return prisma.job.update({
+    where: { id: jobId },
+    data: {
+      status: 'CANCELLED',
+    },
+  });
+};
+
 export default {
   createJob,
   findOpenJobs,
   findJobById,
+  findJobWithProposalCount,
+  updateJobById,
+  cancelJobById,
 };
