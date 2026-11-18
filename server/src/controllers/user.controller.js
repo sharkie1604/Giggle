@@ -1,6 +1,24 @@
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
-import { getPublicUserProfile, updateUserProfile } from '../models/user.model.js';
+import {
+  getPublicUserProfile,
+  updateUserProfile,
+  getUserDashboardData,
+} from '../models/user.model.js';
+
+/**
+ * GET /api/users/me/dashboard
+ * Fetches authenticated user's role-specific live dashboard data.
+ */
+export const getMyDashboard = asyncHandler(async (req, res) => {
+  const dashboardData = await getUserDashboardData(req.user.id, req.user.role);
+
+  res.status(200).json({
+    success: true,
+    role: req.user.role,
+    ...dashboardData,
+  });
+});
 
 /**
  * GET /api/users/:id

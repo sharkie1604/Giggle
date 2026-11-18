@@ -260,3 +260,184 @@ export const updateUserProfile = async (userId, updateData) => {
     },
   });
 };
+
+/**
+ * getUserDashboardData — retrieves live workspace data tailored by role.
+ *
+ * For FREELANCER:
+ * - proposals submitted by freelancerId (ordered by createdAt: 'desc'), including job with client info and escrow.
+ * - escrows where freelancerId = userId (in ['PENDING', 'FUNDED', 'RELEASED', 'DISPUTED']) with job.
+ * - summary stats: activeGigsCount, protectedAmount (sum of FUNDED escrows), totalProposalsCount, acceptedProposalsCount.
+ *
+ * For CLIENT:
+ * - jobs posted by clientId = userId (ordered by createdAt: 'desc'), including escrow (with freelancer) and proposals (with safe freelancer).
+ * - summary stats: openGigsCount, activeGigsCount (IN_PROGRESS), totalProposalsReceived, protectedAmount (sum of FUNDED escrows).
+ *
+ * Security: Strictly whitelists freelancer and client projections to NEVER expose passwordHash, email, or upiId.
+ */
+export const getUserDashboardData = async (userId, role) => {
+  if (role === 'FREELANCER') {
+    const [proposals, escrows] = await Promise.all([
+      prisma.proposal.findMany({
+        where: { freelancerId: userId },
+        orderBy: { createdAt: 'desc' },
+        include: {
+          job: {
+            select: {
+              id: true,
+              title: true,
+              budget: true,
+              category: true,
+              status: true,
+              deadline: true,
+              client: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+              escrow: {
+                select: {
+                  id: true,
+                  status: true,
+                  amount: true,
+                },
+              },
+            },
+          },
+        },
+      }),
+      prisma.escrow.findMany({
+        where: {
+          freelancerId: userId,
+          status: { in: ['PENDING', 'FUNDED', 'RELEASED', 'DISPUTED'] },
+        },
+        orderBy: { updatedAt: 'desc' },
+        include: {
+          job: {
+            select: {
+              id: true,
+              title: true,
+              category: true,
+              status: true,
+              deadline: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    // Active gigs: jobs in progress where freelancer proposal is accepted
+    const activeGigsCount = proposals.filter(
+      (p) => p.status === 'ACCEPTED' && p.job?.status === 'IN_PROGRESS'
+    ).length;
+
+    // Protected amount: sum of FUNDED escrows
+    const protectedAmount = escrows
+      .filter((e) => e.status === 'FUNDED')
+      .reduce((sum, e) => sum + Number(e.amount), 0);
+
+    const totalProposalsCount = proposals.length;
+    const acceptedProposalsCount = proposals.filter((p) => p.status === 'ACCEPTED').length;
+
+    return {
+      proposals: proposals.map((p) => ({
+        ...p,
+        job: p.job
+          ? {
+              ...p.job,
+              budget: Number(p.job.budget),
+              escrow: p.job.escrow
+                ? {
+                    ...p.job.escrow,
+                    amount: Number(p.job.escrow.amount),
+                  }
+                : null,
+            }
+          : null,
+      })),
+      escrows: escrows.map((e) => ({
+        ...e,
+        amount: Number(e.amount),
+      })),
+      stats: {
+        activeGigsCount,
+        protectedAmount,
+        totalProposalsCount,
+        acceptedProposalsCount,
+      },
+    };
+  }
+
+  if (role === 'CLIENT') {
+    const jobs = await prisma.job.findMany({
+      where: { clientId: userId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        escrow: {
+          select: {
+            id: true,
+            status: true,
+            amount: true,
+            freelancer: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+        proposals: {
+          orderBy: { createdAt: 'asc' },
+          include: {
+            freelancer: {
+              select: {
+                id: true,
+                name: true,
+                skills: true,
+                githubUrl: true,
+                portfolioUrl: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const openGigsCount = jobs.filter((j) => j.status === 'OPEN').length;
+    const activeGigsCount = jobs.filter((j) => j.status === 'IN_PROGRESS').length;
+    const totalProposalsReceived = jobs.reduce((sum, j) => sum + (j.proposals?.length || 0), 0);
+    const protectedAmount = jobs
+      .filter((j) => j.escrow?.status === 'FUNDED')
+      .reduce((sum, j) => sum + Number(j.escrow.amount), 0);
+
+    return {
+      jobs: jobs.map((j) => ({
+        ...j,
+        budget: Number(j.budget),
+        escrow: j.escrow
+          ? {
+              ...j.escrow,
+              amount: Number(j.escrow.amount),
+            }
+          : null,
+      })),
+      stats: {
+        openGigsCount,
+        activeGigsCount,
+        totalProposalsReceived,
+        protectedAmount,
+      },
+    };
+  }
+
+  // Fallback for ADMIN or unknown roles
+  return {
+    stats: {
+      activeGigsCount: 0,
+      protectedAmount: 0,
+      totalProposalsCount: 0,
+      acceptedProposalsCount: 0,
+    },
+  };
+};

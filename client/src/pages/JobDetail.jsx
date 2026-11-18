@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import ConfirmModal from '../components/ui/ConfirmModal';
 
 export default function JobDetail() {
   const { id } = useParams();
@@ -40,6 +41,15 @@ export default function JobDetail() {
   const [proposalError, setProposalError] = useState('');
   const [submittedProposal, setSubmittedProposal] = useState(null);
   const [withdrawing, setWithdrawing] = useState(false);
+
+  // Confirmation Modals State
+  const [withdrawModalOpen, setWithdrawModalOpen] = useState(false);
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [acceptModalData, setAcceptModalData] = useState({
+    isOpen: false,
+    proposalId: null,
+    freelancerName: '',
+  });
 
   // Success message toast/banner
   const [feedbackSuccess, setFeedbackSuccess] = useState('');
@@ -157,16 +167,13 @@ export default function JobDetail() {
   // Handler: Freelancer withdraws pending proposal
   const handleWithdrawProposal = async () => {
     if (!submittedProposal?.id) return;
-    if (!window.confirm('Are you sure you want to withdraw your proposal?')) {
-      return;
-    }
-
     setWithdrawing(true);
     setProposalError('');
 
     try {
       await api.delete(`/proposals/${submittedProposal.id}`);
       setSubmittedProposal(null);
+      setWithdrawModalOpen(false);
       setFeedbackSuccess(
         'Proposal withdrawn successfully. You can apply again while the gig remains open.'
       );
@@ -181,14 +188,9 @@ export default function JobDetail() {
   };
 
   // Handler: Client owner accepts proposal (atomic transaction)
-  const handleAcceptProposal = async (proposalId) => {
-    if (
-      !window.confirm(
-        'Accept this proposal and hire this freelancer? This will lock the gig and reject competing proposals.'
-      )
-    ) {
-      return;
-    }
+  const handleAcceptProposal = async () => {
+    const proposalId = acceptModalData.proposalId;
+    if (!proposalId) return;
 
     setAcceptingId(proposalId);
     setFeedbackSuccess('');
@@ -196,6 +198,7 @@ export default function JobDetail() {
 
     try {
       await api.patch(`/proposals/${proposalId}/accept`);
+      setAcceptModalData({ isOpen: false, proposalId: null, freelancerName: '' });
       setFeedbackSuccess(
         'Freelancer hired! Next step: fund payment protection to kick off work.'
       );
@@ -213,20 +216,13 @@ export default function JobDetail() {
 
   // Handler: Client owner cancels gig
   const handleCancelJob = async () => {
-    if (
-      !window.confirm(
-        'Are you sure you want to cancel this gig? This action cannot be undone.'
-      )
-    ) {
-      return;
-    }
-
     setCancellingJob(true);
     setFeedbackSuccess('');
     setError('');
 
     try {
       await api.delete(`/jobs/${id}`);
+      setCancelModalOpen(false);
       setFeedbackSuccess('Gig has been cancelled.');
       await fetchJob();
     } catch (err) {
@@ -395,7 +391,7 @@ export default function JobDetail() {
           {/* Owner-Only: Soft Cancel Gig Action */}
           {isOwnerClient && job.status === 'OPEN' && (
             <button
-              onClick={handleCancelJob}
+              onClick={() => setCancelModalOpen(true)}
               disabled={cancellingJob}
               className="px-3 py-1.5 border-2 border-ink rounded bg-bubblegum/20 hover:bg-bubblegum text-xs font-bold text-ink transition-colors flex items-center gap-1 cursor-pointer"
             >
@@ -514,7 +510,7 @@ export default function JobDetail() {
                     pending.
                   </p>
                   <button
-                    onClick={handleWithdrawProposal}
+                    onClick={() => setWithdrawModalOpen(true)}
                     disabled={withdrawing}
                     className="brutal-btn bg-bubblegum text-xs py-2 px-4 shadow-brutal-sm font-black flex items-center gap-1 cursor-pointer flex-shrink-0"
                   >
@@ -720,7 +716,13 @@ export default function JobDetail() {
                         {/* Accept & Hire Button (Visible when job is OPEN and proposal is PENDING) */}
                         {job.status === 'OPEN' && prop.status === 'PENDING' && (
                           <button
-                            onClick={() => handleAcceptProposal(prop.id)}
+                            onClick={() =>
+                              setAcceptModalData({
+                                isOpen: true,
+                                proposalId: prop.id,
+                                freelancerName: prop.freelancer.name,
+                              })
+                            }
                             disabled={acceptingId === prop.id}
                             className="brutal-btn bg-jake text-ink text-xs py-1.5 px-3 shadow-brutal-sm font-black flex items-center gap-1 cursor-pointer"
                           >
@@ -787,6 +789,57 @@ export default function JobDetail() {
           </div>
         </div>
       )}
+
+      {/* Confirmation Modal: Freelancer Withdraw Proposal */}
+      <ConfirmModal
+        isOpen={withdrawModalOpen}
+        title="Withdraw Proposal?"
+        message="Are you sure you want to withdraw your proposal? You can submit a new proposal as long as this gig remains open."
+        confirmLabel="Withdraw Proposal"
+        cancelLabel="Keep Proposal"
+        variant="bubblegum"
+        loading={withdrawing}
+        onConfirm={handleWithdrawProposal}
+        onCancel={() => !withdrawing && setWithdrawModalOpen(false)}
+      />
+
+      {/* Confirmation Modal: Client Cancel Gig */}
+      <ConfirmModal
+        isOpen={cancelModalOpen}
+        title="Cancel This Gig?"
+        message="Are you sure you want to cancel this gig? It will be marked as CANCELLED and will no longer accept applications. This action cannot be undone."
+        confirmLabel="Yes, Cancel Gig"
+        cancelLabel="Keep Gig Open"
+        variant="bubblegum"
+        loading={cancellingJob}
+        onConfirm={handleCancelJob}
+        onCancel={() => !cancellingJob && setCancelModalOpen(false)}
+      />
+
+      {/* Confirmation Modal: Client Accept & Hire */}
+      <ConfirmModal
+        isOpen={acceptModalData.isOpen}
+        title="Accept & Hire Freelancer"
+        message={
+          <div>
+            <p>
+              Hire <span className="font-bold text-ink">{acceptModalData.freelancerName}</span> for this gig?
+            </p>
+            <p className="mt-2 text-xs font-semibold text-gray-600">
+              This will lock the gig to <span className="font-mono font-bold text-ink">IN_PROGRESS</span>, create your payment protection vault for ₹{job ? Number(job.budget).toLocaleString('en-IN') : '...'}, and respectfully decline competing proposals.
+            </p>
+          </div>
+        }
+        confirmLabel="Accept & Lock Gig"
+        cancelLabel="Review Later"
+        variant="jake"
+        loading={acceptingId !== null}
+        onConfirm={handleAcceptProposal}
+        onCancel={() =>
+          !acceptingId &&
+          setAcceptModalData({ isOpen: false, proposalId: null, freelancerName: '' })
+        }
+      />
     </div>
   );
 }

@@ -1,6 +1,10 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { getUserProfile, updateProfile } from '../controllers/user.controller.js';
+import {
+  getUserProfile,
+  updateProfile,
+  getMyDashboard,
+} from '../controllers/user.controller.js';
 import { authenticate } from '../middleware/auth.middleware.js';
 import {
   validate,
@@ -51,6 +55,9 @@ export const updateProfileSchema = nonEmptyObject(
 );
 
 // ─── Route Bindings ───────────────────────────────────────────────────────────
+
+// GET /api/users/me/dashboard -> Authenticated role-specific live dashboard (Must be declared before /:id)
+router.get('/me/dashboard', authenticate, getMyDashboard);
 
 // GET /api/users/:id -> Public profile view (No auth required)
 router.get('/:id', validate({ params: userIdParamSchema }), getUserProfile);
