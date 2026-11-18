@@ -32,7 +32,7 @@ export const createUser = async (data) => {
 
 /**
  * findUserByEmail — retrieves a user including passwordHash (for bcrypt.compare)
- * and upiId.  MUST NOT be returned directly in HTTP responses.
+ * and upiId. MUST NOT be returned directly in HTTP responses.
  *
  * @param {string} email — raw email string; normalised here before the query
  * @returns {Promise<FullUser|null>}
@@ -75,5 +75,164 @@ export const updateUser = async (id, data) => {
     where: { id },
     data,
     select: SAFE_USER_SELECT,
+  });
+};
+
+/**
+ * getPublicUserProfile — queries public user profile by userId.
+ * CRITICAL SECURITY RULE 6 (PII Isolation):
+ * Explicitly whitelist fields and NEVER select passwordHash, email, or upiId.
+ * Formats reviewsReceived (with reviewer id and name), averageRating, and completedGigs.
+ *
+ * @param {number} userId
+ * @returns {Promise<PublicUserProfile|null>}
+ */
+export const getPublicUserProfile = async (userId) => {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      name: true,
+      role: true,
+      bio: true,
+      skills: true,
+      githubUrl: true,
+      portfolioUrl: true,
+      createdAt: true,
+      reviewsReceived: {
+        select: {
+          id: true,
+          rating: true,
+          comment: true,
+          createdAt: true,
+          reviewer: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      },
+      escrows: {
+        where: {
+          job: {
+            status: 'COMPLETED',
+          },
+        },
+        select: {
+          id: true,
+          job: {
+            select: {
+              id: true,
+              title: true,
+              budget: true,
+              category: true,
+              updatedAt: true,
+            },
+          },
+        },
+      },
+      jobsPosted: {
+        where: {
+          status: 'COMPLETED',
+        },
+        select: {
+          id: true,
+          title: true,
+          budget: true,
+          category: true,
+          updatedAt: true,
+        },
+      },
+    },
+  });
+
+  if (!user) {
+    return null;
+  }
+
+  const totalReviews = user.reviewsReceived.length;
+  const averageRating =
+    totalReviews > 0
+      ? Math.round(
+          (user.reviewsReceived.reduce((sum, r) => sum + r.rating, 0) /
+            totalReviews) *
+            10
+        ) / 10
+      : null;
+
+  // Format completed gigs cleanly for clickable gig cards (/jobs/:id)
+  const completedGigs =
+    user.role === 'CLIENT'
+      ? user.jobsPosted.map((job) => ({
+          id: job.id,
+          title: job.title,
+          budget: Number(job.budget),
+          category: job.category,
+          updatedAt: job.updatedAt,
+        }))
+      : user.escrows
+          .map((e) => e.job)
+          .filter(Boolean)
+          .map((job) => ({
+            id: job.id,
+            title: job.title,
+            budget: Number(job.budget),
+            category: job.category,
+            updatedAt: job.updatedAt,
+          }));
+
+  return {
+    id: user.id,
+    name: user.name,
+    role: user.role,
+    bio: user.bio,
+    skills: user.skills,
+    githubUrl: user.githubUrl,
+    portfolioUrl: user.portfolioUrl,
+    createdAt: user.createdAt,
+    averageRating,
+    totalReviews,
+    reviewsReceived: user.reviewsReceived,
+    completedGigs,
+  };
+};
+
+/**
+ * updateUserProfile — updates allowed profile fields for an authenticated owner.
+ * Returns safe fields + email and upiId (strictly excluding passwordHash).
+ *
+ * @param {number} userId
+ * @param {object} updateData
+ * @returns {Promise<OwnerUserProfile>}
+ */
+export const updateUserProfile = async (userId, updateData) => {
+  const allowedFields = ['name', 'bio', 'skills', 'githubUrl', 'portfolioUrl', 'upiId'];
+  const data = {};
+
+  for (const field of allowedFields) {
+    if (updateData[field] !== undefined) {
+      data[field] = updateData[field];
+    }
+  }
+
+  return prisma.user.update({
+    where: { id: userId },
+    data,
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      role: true,
+      bio: true,
+      skills: true,
+      githubUrl: true,
+      portfolioUrl: true,
+      upiId: true,
+      createdAt: true,
+    },
   });
 };
