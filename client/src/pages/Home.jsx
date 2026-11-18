@@ -1,8 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, ShieldCheck, Zap, Code2 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { ArrowRight, ShieldCheck, Zap, Code2, PlusCircle, LayoutDashboard } from 'lucide-react';
 
 export default function Home() {
+  const { user, isAuthenticated } = useAuth();
+
   return (
     <div className="max-w-5xl mx-auto px-4 py-12">
       {/* Hero Section */}
@@ -23,9 +26,21 @@ export default function Home() {
           <Link to="/jobs" className="brutal-btn bg-jake text-ink flex items-center gap-2 text-lg">
             Explore Gigs <ArrowRight className="w-5 h-5" />
           </Link>
-          <Link to="/post-job" className="brutal-btn bg-finn text-ink flex items-center gap-2 text-lg">
-            Post a Tech Gig
-          </Link>
+
+          {/* Role-Aware Secondary Hero Button */}
+          {isAuthenticated && user?.role === 'CLIENT' ? (
+            <Link to="/post-job" className="brutal-btn bg-finn text-ink flex items-center gap-2 text-lg">
+              <PlusCircle className="w-5 h-5" /> Post a Fixed Gig
+            </Link>
+          ) : isAuthenticated && user?.role === 'FREELANCER' ? (
+            <Link to="/dashboard" className="brutal-btn bg-finn text-ink flex items-center gap-2 text-lg">
+              <LayoutDashboard className="w-5 h-5" /> My Dashboard
+            </Link>
+          ) : (
+            <Link to="/register" className="brutal-btn bg-finn text-ink flex items-center gap-2 text-lg">
+              Join as Client
+            </Link>
+          )}
         </div>
       </section>
 
