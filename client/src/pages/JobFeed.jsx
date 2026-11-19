@@ -149,7 +149,7 @@ export default function JobFeed() {
                   : 'bg-white text-gray-700 hover:bg-gray-100 shadow-brutal-sm'
               }`}
             >
-              {cat}
+              {cat === 'AI_ML' ? 'AI / ML' : cat}
             </button>
           ))}
         </div>

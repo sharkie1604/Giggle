@@ -166,10 +166,18 @@ export default function Dashboard() {
           <div className="flex items-center gap-2 mb-2">
             <span
               className={`brutal-badge ${
-                role === 'CLIENT' ? 'bg-finn' : 'bg-jake'
+                role === 'CLIENT'
+                  ? 'bg-finn'
+                  : role === 'ADMIN'
+                  ? 'bg-bubblegum'
+                  : 'bg-jake'
               } text-ink text-xs font-black tracking-wide`}
             >
-              {role === 'CLIENT' ? 'CLIENT WORKSPACE' : 'FREELANCER WORKSPACE'}
+              {role === 'CLIENT'
+                ? 'CLIENT WORKSPACE'
+                : role === 'ADMIN'
+                ? 'ADMIN CONSOLE'
+                : 'FREELANCER WORKSPACE'}
             </span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-extrabold font-heading text-ink">
@@ -178,6 +186,8 @@ export default function Dashboard() {
           <p className="text-xs sm:text-sm font-medium text-ink/70 mt-1">
             {role === 'CLIENT'
               ? 'Manage your posted gigs, review incoming proposals, and track hires.'
+              : role === 'ADMIN'
+              ? 'Arbitrate gig disputes, inspect escrow accounts, and monitor platform transactions.'
               : 'Track submitted proposals, inspect delivery status, and monitor protected funds.'}
           </p>
         </div>
@@ -196,6 +206,14 @@ export default function Dashboard() {
               className="brutal-btn bg-finn text-ink text-xs sm:text-sm font-black flex items-center gap-1.5"
             >
               <span>+ Post a Gig</span>
+            </Link>
+          ) : role === 'ADMIN' ? (
+            <Link
+              to="/admin/disputes"
+              className="brutal-btn bg-bubblegum text-ink text-xs sm:text-sm font-black flex items-center gap-1.5"
+            >
+              <AlertCircle className="w-4 h-4" />
+              <span>Disputes Console</span>
             </Link>
           ) : (
             <Link
@@ -366,7 +384,13 @@ export default function Dashboard() {
                                   : 'bg-bubblegum text-ink'
                               }`}
                             >
-                              PROPOSAL: {prop.status}
+                              {prop.status === 'ACCEPTED'
+                                ? 'Proposal Accepted'
+                                : prop.status === 'PENDING'
+                                ? 'Proposal Pending'
+                                : prop.status === 'REJECTED'
+                                ? 'Proposal Rejected'
+                                : `Proposal ${prop.status}`}
                             </span>
                           </div>
                           <Link
@@ -547,7 +571,7 @@ export default function Dashboard() {
                 {data?.stats?.activeGigsCount ?? 0}
               </p>
               <p className="text-xs font-medium text-ink/60 mt-1">
-                Gigs locked to IN_PROGRESS with hired engineers
+                Gigs currently in active development
               </p>
             </div>
 
@@ -783,7 +807,11 @@ export default function Dashboard() {
                                               : 'bg-white text-ink'
                                           }`}
                                         >
-                                          {prop.status}
+                                          {prop.status === 'ACCEPTED'
+                                            ? 'Accepted'
+                                            : prop.status === 'REJECTED'
+                                            ? 'Rejected'
+                                            : 'Pending'}
                                         </span>
 
                                         {prop.status === 'PENDING' && (
@@ -839,6 +867,44 @@ export default function Dashboard() {
                 })}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {/* ROLE C: ADMIN DASHBOARD                                             */}
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {role === 'ADMIN' && (
+        <div className="space-y-8">
+          <div className="brutal-card p-8 bg-white border-4 border-ink shadow-brutal text-center max-w-2xl mx-auto">
+            <div className="w-16 h-16 bg-bubblegum border-3 border-ink rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-brutal-sm">
+              <ShieldCheck className="w-8 h-8 text-ink" />
+            </div>
+            <span className="brutal-badge bg-bubblegum text-ink text-xs mb-2">
+              ADMINISTRATIVE ACCESS
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-black font-heading text-ink mt-2 mb-3">
+              DISPUTES ARBITRATION CONSOLE
+            </h2>
+            <p className="text-sm font-medium text-gray-700 mb-6 leading-relaxed">
+              As a platform administrator, you mediate contested contracts, inspect code deliverables and transaction histories, and execute binary payout or refund resolutions.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link
+                to="/admin/disputes"
+                className="brutal-btn bg-bubblegum text-ink font-heading font-black text-sm py-3 px-6 shadow-brutal-sm flex items-center justify-center gap-2"
+              >
+                <AlertCircle className="w-4 h-4" />
+                <span>OPEN DISPUTES CONSOLE</span>
+              </Link>
+              <Link
+                to="/transactions"
+                className="brutal-btn bg-paper text-ink font-heading font-black text-sm py-3 px-6 shadow-brutal-sm flex items-center justify-center gap-2"
+              >
+                <Receipt className="w-4 h-4" />
+                <span>VIEW GLOBAL AUDIT LEDGER</span>
+              </Link>
+            </div>
           </div>
         </div>
       )}

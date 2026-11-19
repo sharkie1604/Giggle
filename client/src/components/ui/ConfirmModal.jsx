@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { AlertTriangle, AlertCircle, X, Loader2 } from 'lucide-react';
 
 /**
@@ -26,6 +26,17 @@ export default function ConfirmModal({
   onCancel,
   loading = false,
 }) {
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && !loading) {
+        onCancel();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, loading, onCancel]);
+
   if (!isOpen) return null;
 
   const confirmBtnStyles =
