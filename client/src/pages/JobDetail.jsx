@@ -15,10 +15,12 @@ import {
   ExternalLink,
   Send,
   Users,
+  Star,
 } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import ConfirmModal from '../components/ui/ConfirmModal';
+import EscrowVaultCard from '../components/escrow/EscrowVaultCard';
 
 export default function JobDetail() {
   const { id } = useParams();
@@ -54,11 +56,28 @@ export default function JobDetail() {
   // Success message toast/banner
   const [feedbackSuccess, setFeedbackSuccess] = useState('');
 
+  // Two-way review state
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState('');
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [reviewError, setReviewError] = useState('');
+  const [reviewSuccess, setReviewSuccess] = useState('');
+
   const isOwnerClient =
     isAuthenticated && user?.role === 'CLIENT' && user?.id === job?.client?.id;
   const isNonOwnerClient =
     isAuthenticated && user?.role === 'CLIENT' && user?.id !== job?.client?.id;
   const isFreelancer = isAuthenticated && user?.role === 'FREELANCER';
+  const isHiredFreelancer =
+    isAuthenticated &&
+    user?.role === 'FREELANCER' &&
+    job?.escrow?.freelancerId === user?.id;
+  const isAdmin = isAuthenticated && user?.role === 'ADMIN';
+  const isParticipant =
+    isAuthenticated &&
+    (user?.id === job?.clientId || user?.id === job?.escrow?.freelancerId);
+  const userHasReviewed =
+    job?.reviews?.some((r) => r.reviewerId === user?.id);
   const isGuest = !isAuthenticated;
 
   // 1. Fetch main job details
@@ -232,6 +251,31 @@ export default function JobDetail() {
       setError(apiMsg);
     } finally {
       setCancellingJob(false);
+    }
+  };
+
+  // Handler: Participant leaves two-way review
+  const handleSubmitReview = async (e) => {
+    e.preventDefault();
+    setSubmittingReview(true);
+    setReviewError('');
+    setReviewSuccess('');
+
+    try {
+      await api.post(`/jobs/${id}/reviews`, {
+        rating: Number(reviewRating),
+        comment: reviewComment.trim() || undefined,
+      });
+      setReviewSuccess('Thank you! Your verified review has been published.');
+      setReviewComment('');
+      await fetchJob();
+    } catch (err) {
+      const data = err.response?.data;
+      let apiMsg = 'Failed to submit review.';
+      if (data?.message) apiMsg = data.message;
+      setReviewError(apiMsg);
+    } finally {
+      setSubmittingReview(false);
     }
   };
 
@@ -434,6 +478,11 @@ export default function JobDetail() {
           </div>
         </div>
       </div>
+
+      {/* ─── PAYMENT PROTECTION VAULT (Visible when escrow exists for owner, freelancer, or admin) ─── */}
+      {job.escrow && (isOwnerClient || isHiredFreelancer || isAdmin) && (
+        <EscrowVaultCard job={job} onRefresh={fetchJob} user={user} />
+      )}
 
       {/* ─── ROLE-AWARE INTERACTIVE SECTION ─────────────────────────────────── */}
 
@@ -787,6 +836,175 @@ export default function JobDetail() {
               {job._count?.proposals === 1 ? 'proposal' : 'proposals'} received
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ─── TWO-WAY VERIFIED REVIEWS SECTION (Visible on completed gigs or when reviews exist) ─── */}
+      {(job.status === 'COMPLETED' || (job.reviews && job.reviews.length > 0)) && (
+        <div className="brutal-card p-6 sm:p-8 bg-paper border-4 border-ink shadow-brutal space-y-6">
+          <div className="flex items-center justify-between pb-4 border-b-3 border-ink">
+            <div className="flex items-center gap-2">
+              <Star className="w-6 h-6 text-jake fill-jake" />
+              <h3 className="font-heading font-black text-2xl text-ink">
+                VERIFIED GIG REVIEWS ({job.reviews?.length || 0})
+              </h3>
+            </div>
+            <span className="text-[10px] font-mono font-bold bg-white px-2 py-1 rounded border border-ink shadow-brutal-sm">
+              TWO-WAY RATINGS
+            </span>
+          </div>
+
+          {/* Review Submission Form for Participants */}
+          {job.status === 'COMPLETED' && isParticipant && (
+            <div className="p-5 bg-white border-3 border-ink rounded-xl shadow-brutal-sm">
+              {userHasReviewed ? (
+                <div className="flex items-center gap-3 text-ink">
+                  <CheckCircle className="w-5 h-5 text-bmo flex-shrink-0" />
+                  <p className="text-xs sm:text-sm font-bold">
+                    You have submitted your verified review for this completed gig. Thank you!
+                  </p>
+                </div>
+              ) : (
+                <form onSubmit={handleSubmitReview} className="space-y-4">
+                  <div>
+                    <h4 className="font-heading font-black text-lg text-ink">
+                      LEAVE A VERIFIED REVIEW
+                    </h4>
+                    <p className="text-xs font-medium text-gray-700 mt-0.5">
+                      Share your experience working with{' '}
+                      <span className="font-bold text-ink">
+                        {isOwnerClient
+                          ? job.escrow?.freelancer?.name || 'the freelancer'
+                          : job.client?.name || 'the client'}
+                      </span>
+                      .
+                    </p>
+                  </div>
+
+                  {reviewError && (
+                    <div className="p-3 bg-bubblegum border-2 border-ink rounded-lg text-xs font-bold text-ink">
+                      {reviewError}
+                    </div>
+                  )}
+
+                  {reviewSuccess && (
+                    <div className="p-3 bg-white border-2 border-ink rounded-lg text-xs font-bold text-ink">
+                      {reviewSuccess}
+                    </div>
+                  )}
+
+                  {/* Rating Selector */}
+                  <div>
+                    <label className="block font-bold text-xs uppercase text-ink mb-1">
+                      Rating (1 to 5 Stars) *
+                    </label>
+                    <div className="flex items-center gap-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => setReviewRating(star)}
+                          className={`p-2 rounded-lg border-2 border-ink shadow-brutal-sm transition-transform cursor-pointer ${
+                            star <= reviewRating
+                              ? 'bg-jake text-ink scale-105'
+                              : 'bg-white text-gray-400'
+                          }`}
+                        >
+                          <Star
+                            className={`w-5 h-5 ${
+                              star <= reviewRating
+                                ? 'fill-ink text-ink'
+                                : 'text-gray-400'
+                            }`}
+                          />
+                        </button>
+                      ))}
+                      <span className="font-mono font-black text-sm text-ink ml-2">
+                        {reviewRating} of 5 Stars
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Comment */}
+                  <div>
+                    <label className="block font-bold text-xs uppercase text-ink mb-1">
+                      Feedback / Review Comments (Optional)
+                    </label>
+                    <textarea
+                      rows={3}
+                      maxLength={1000}
+                      value={reviewComment}
+                      onChange={(e) => setReviewComment(e.target.value)}
+                      placeholder="Describe the collaboration quality, communication speed, code standards..."
+                      className="brutal-input text-xs resize-y"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={submittingReview}
+                    className="brutal-btn bg-jake text-ink font-heading font-black text-xs py-2.5 px-6 shadow-brutal-sm cursor-pointer disabled:opacity-50"
+                  >
+                    {submittingReview ? 'POSTING REVIEW...' : 'SUBMIT VERIFIED REVIEW'}
+                  </button>
+                </form>
+              )}
+            </div>
+          )}
+
+          {/* List Existing Reviews */}
+          {job.reviews && job.reviews.length > 0 ? (
+            <div className="space-y-3">
+              {job.reviews.map((rev) => (
+                <div
+                  key={rev.id}
+                  className="p-4 bg-white border-2 border-ink rounded-xl shadow-brutal-sm"
+                >
+                  <div className="flex items-center justify-between pb-2 mb-2 border-b border-ink/10">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-xs text-ink">
+                        {rev.reviewer?.name || `User #${rev.reviewerId}`}
+                      </span>
+                      <span className="text-[10px] font-mono font-bold bg-paper px-1.5 py-0.2 rounded border border-ink text-gray-700">
+                        {rev.reviewer?.role || 'PARTICIPANT'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <Star
+                          key={s}
+                          className={`w-3.5 h-3.5 ${
+                            s <= rev.rating
+                              ? 'fill-jake text-ink'
+                              : 'text-gray-300'
+                          }`}
+                        />
+                      ))}
+                      <span className="font-mono font-bold text-xs text-ink ml-1">
+                        {rev.rating}/5
+                      </span>
+                    </div>
+                  </div>
+                  {rev.comment && (
+                    <p className="text-xs text-gray-800 font-medium leading-relaxed">
+                      "{rev.comment}"
+                    </p>
+                  )}
+                  <span className="text-[10px] text-gray-400 block mt-2">
+                    {new Date(rev.createdAt).toLocaleDateString('en-IN', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                    })}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs font-medium text-gray-500 italic text-center py-4">
+              No reviews published yet for this completed gig.
+            </p>
+          )}
         </div>
       )}
 
