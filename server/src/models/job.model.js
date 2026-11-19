@@ -133,6 +133,7 @@ export const findJobById = async (jobId) => {
           id: true,
           deliveryUrl: true,
           notes: true,
+          revisionNotes: true,
           status: true,
           createdAt: true,
           freelancer: {

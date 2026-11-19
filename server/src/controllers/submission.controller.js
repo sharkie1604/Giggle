@@ -83,10 +83,15 @@ export const requestRevision = asyncHandler(async (req, res) => {
     );
   }
 
-  const updatedSubmission = await markSubmissionRevisionRequested(submission.id);
+  const { revisionNotes } = req.body || {};
+  const updatedSubmission = await markSubmissionRevisionRequested(
+    submission.id,
+    revisionNotes
+  );
 
   res.status(200).json({
     success: true,
+    message: 'Revision requested successfully',
     submission: updatedSubmission,
   });
 });

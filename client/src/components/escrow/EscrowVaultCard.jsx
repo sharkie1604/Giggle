@@ -51,11 +51,11 @@ export default function EscrowVaultCard({ job, onRefresh, user }) {
   const [releaseModalOpen, setReleaseModalOpen] = useState(false);
   const [releasingPayout, setReleasingPayout] = useState(false);
 
-  const [revisionModalData, setRevisionModalData] = useState({
-    isOpen: false,
-    submissionId: null,
-  });
-  const [requestingRevision, setRequestingRevision] = useState(false);
+  // State: Revision Request
+  const [activeRevisionSubId, setActiveRevisionSubId] = useState(null);
+  const [revisionNotesInput, setRevisionNotesInput] = useState('');
+  const [submittingRevision, setSubmittingRevision] = useState(false);
+  const [revisionInputError, setRevisionInputError] = useState('');
 
   // General Notification
   const [actionMessage, setActionMessage] = useState('');
@@ -170,26 +170,32 @@ export default function EscrowVaultCard({ job, onRefresh, user }) {
     }
   };
 
-  // ─── 4. Client Requests Revision ─────────────────────────────────────────
-  const handleRequestRevision = async () => {
-    const subId = revisionModalData.submissionId;
-    if (!subId) return;
+  // ─── 4. Client Requests Revision with Specific Feedback ────────────────────
+  const handleSendRevision = async (subId) => {
+    if (revisionNotesInput.trim().length < 5) {
+      setRevisionInputError('Please describe the changes needed (minimum 5 characters).');
+      return;
+    }
 
-    setRequestingRevision(true);
+    setSubmittingRevision(true);
+    setRevisionInputError('');
     setActionError('');
     setActionMessage('');
 
     try {
-      await api.patch(`/submissions/${subId}/revision`);
-      setRevisionModalData({ isOpen: false, submissionId: null });
-      setActionMessage('Revision requested. Freelancer can now submit an updated deliverable.');
+      await api.patch(`/submissions/${subId}/revision`, {
+        revisionNotes: revisionNotesInput.trim(),
+      });
+      setActiveRevisionSubId(null);
+      setRevisionNotesInput('');
+      setActionMessage('Revision requested. Detailed instructions sent to freelancer.');
       if (onRefresh) await onRefresh();
     } catch (err) {
       const apiMsg =
         err.response?.data?.message || 'Failed to request revision.';
-      setActionError(apiMsg);
+      setRevisionInputError(apiMsg);
     } finally {
-      setRequestingRevision(false);
+      setSubmittingRevision(false);
     }
   };
 
@@ -277,14 +283,19 @@ export default function EscrowVaultCard({ job, onRefresh, user }) {
         <div className="p-4 bg-white/80 backdrop-blur-xs border-3 border-ink rounded-xl shadow-brutal-sm flex items-center justify-between">
           <div>
             <span className="text-[11px] font-black uppercase text-gray-600 block">
-              Protected Gig Amount
+              {escrow.status === 'RELEASED' ? 'Current Vault Balance' : 'Protected Gig Amount'}
             </span>
             <div className="flex items-center gap-1 mt-0.5">
               <IndianRupee className="w-6 h-6 stroke-[2.5] text-ink" />
               <span className="font-mono font-black text-3xl text-ink">
-                {Number(escrow.amount).toLocaleString('en-IN')}
+                {escrow.status === 'RELEASED' ? '0' : Number(escrow.amount).toLocaleString('en-IN')}
               </span>
             </div>
+            {escrow.status === 'RELEASED' && (
+              <span className="text-[11px] font-bold text-gray-700 block mt-1">
+                ₹0 Held in Vault (Full ₹{Number(escrow.amount).toLocaleString('en-IN')} Released)
+              </span>
+            )}
           </div>
           <ShieldCheck className="w-10 h-10 text-bmo flex-shrink-0" />
         </div>
@@ -472,28 +483,94 @@ export default function EscrowVaultCard({ job, onRefresh, user }) {
                       {sub.notes}
                     </p>
 
+                    {/* Client Revision Feedback Notes */}
+                    {sub.revisionNotes && (
+                      <div className="mt-3 p-3 bg-bubblegum/25 border-2 border-ink rounded-lg shadow-brutal-sm">
+                        <span className="font-heading font-black uppercase text-[10px] text-ink block mb-0.5">
+                          ⚠️ Client Revision Feedback:
+                        </span>
+                        <p className="text-xs font-semibold text-gray-900 whitespace-pre-line leading-relaxed">
+                          {sub.revisionNotes}
+                        </p>
+                      </div>
+                    )}
+
                     {/* Client Actions per Submission */}
                     {isOwnerClient && sub.status === 'SUBMITTED' && (
-                      <div className="flex items-center gap-2 mt-3 pt-2 border-t border-ink/10">
-                        <button
-                          onClick={() => setReleaseModalOpen(true)}
-                          className="brutal-btn bg-bmo text-ink text-xs py-1.5 px-3 shadow-brutal-sm font-black flex items-center gap-1 cursor-pointer"
-                        >
-                          <Check className="w-3.5 h-3.5" />
-                          APPROVE & RELEASE PAYOUT
-                        </button>
-                        <button
-                          onClick={() =>
-                            setRevisionModalData({
-                              isOpen: true,
-                              submissionId: sub.id,
-                            })
-                          }
-                          className="brutal-btn bg-white text-ink text-xs py-1.5 px-3 shadow-brutal-sm font-bold flex items-center gap-1 cursor-pointer hover:bg-paper"
-                        >
-                          <RotateCcw className="w-3.5 h-3.5" />
-                          REQUEST REVISION
-                        </button>
+                      <div className="mt-3 pt-2 border-t border-ink/10">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setReleaseModalOpen(true)}
+                            className="brutal-btn bg-bmo text-ink text-xs py-1.5 px-3 shadow-brutal-sm font-black flex items-center gap-1 cursor-pointer"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                            APPROVE & RELEASE PAYOUT
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (activeRevisionSubId === sub.id) {
+                                setActiveRevisionSubId(null);
+                                setRevisionNotesInput('');
+                                setRevisionInputError('');
+                              } else {
+                                setActiveRevisionSubId(sub.id);
+                                setRevisionNotesInput('');
+                                setRevisionInputError('');
+                              }
+                            }}
+                            className="brutal-btn bg-white text-ink text-xs py-1.5 px-3 shadow-brutal-sm font-bold flex items-center gap-1 cursor-pointer hover:bg-paper"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5" />
+                            {activeRevisionSubId === sub.id ? 'CANCEL REVISION' : 'REQUEST REVISION'}
+                          </button>
+                        </div>
+
+                        {/* Inline Revision Feedback Form */}
+                        {activeRevisionSubId === sub.id && (
+                          <div className="mt-3 p-3 bg-white border-2 border-ink rounded-lg shadow-brutal-sm space-y-2">
+                            <label className="block font-bold text-[11px] uppercase text-ink">
+                              Describe Changes / Fixes Needed * (Min 5 chars)
+                            </label>
+                            {revisionInputError && (
+                              <p className="text-[11px] font-bold text-bubblegum">
+                                {revisionInputError}
+                              </p>
+                            )}
+                            <textarea
+                              rows={2}
+                              value={revisionNotesInput}
+                              onChange={(e) => setRevisionNotesInput(e.target.value)}
+                              placeholder="e.g. Please update the README setup instructions and fix the mobile navbar layout..."
+                              className="brutal-input text-xs resize-y w-full"
+                            />
+                            <div className="flex items-center gap-2 justify-end">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveRevisionSubId(null);
+                                  setRevisionNotesInput('');
+                                  setRevisionInputError('');
+                                }}
+                                className="brutal-btn bg-paper text-ink text-xs py-1 px-3 shadow-brutal-sm font-bold"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="button"
+                                disabled={submittingRevision}
+                                onClick={() => handleSendRevision(sub.id)}
+                                className="brutal-btn bg-bubblegum text-ink text-xs py-1 px-3 shadow-brutal-sm font-black flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                              >
+                                {submittingRevision ? (
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                ) : (
+                                  <RotateCcw className="w-3 h-3" />
+                                )}
+                                SEND REVISION REQUEST
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -683,21 +760,6 @@ export default function EscrowVaultCard({ job, onRefresh, user }) {
         onCancel={() => !releasingPayout && setReleaseModalOpen(false)}
       />
 
-      {/* ─── MODAL: Request Revision ────────────────────────────────────────── */}
-      <ConfirmModal
-        isOpen={revisionModalData.isOpen}
-        title="Request Work Revision?"
-        message="Are you sure you want to request a revision? The freelancer will be notified to make changes and submit an updated delivery."
-        confirmLabel="Request Revision"
-        cancelLabel="Cancel"
-        variant="bubblegum"
-        loading={requestingRevision}
-        onConfirm={handleRequestRevision}
-        onCancel={() =>
-          !requestingRevision &&
-          setRevisionModalData({ isOpen: false, submissionId: null })
-        }
-      />
 
       {/* ─── MODAL: Raise Dispute ───────────────────────────────────────────── */}
       {disputeModalOpen && (
