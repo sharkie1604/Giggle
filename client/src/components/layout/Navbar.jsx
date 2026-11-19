@@ -84,7 +84,7 @@ export default function Navbar() {
               className="flex items-center gap-1 font-bold uppercase text-xs text-bubblegum hover:underline tracking-wide px-2 py-1"
             >
               <AlertTriangle className="w-4 h-4" />
-              Admin Disputes
+              Disputes
             </Link>
           )}
         </nav>

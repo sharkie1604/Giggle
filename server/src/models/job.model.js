@@ -118,7 +118,32 @@ export const findJobById = async (jobId) => {
           status: true,
           amount: true,
           freelancerId: true,
+          disputeReason: true,
           submittedAt: true,
+          freelancer: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
+      submissions: {
+        select: {
+          id: true,
+          deliveryUrl: true,
+          notes: true,
+          status: true,
+          createdAt: true,
+          freelancer: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
         },
       },
       reviews: {
@@ -129,6 +154,16 @@ export const findJobById = async (jobId) => {
           reviewerId: true,
           revieweeId: true,
           createdAt: true,
+          reviewer: {
+            select: {
+              id: true,
+              name: true,
+              role: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
         },
       },
     },
