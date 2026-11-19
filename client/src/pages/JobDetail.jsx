@@ -16,6 +16,8 @@ import {
   Send,
   Users,
   Star,
+  MessageSquare,
+  ShieldCheck,
 } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -64,6 +66,10 @@ export default function JobDetail() {
   const [reviewError, setReviewError] = useState('');
   const [reviewSuccess, setReviewSuccess] = useState('');
 
+  // Workroom Chat popup state & unread badge counter
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
   const isOwnerClient =
     isAuthenticated && user?.role === 'CLIENT' && user?.id === job?.client?.id;
   const isNonOwnerClient =
@@ -80,6 +86,38 @@ export default function JobDetail() {
   const userHasReviewed =
     job?.reviews?.some((r) => r.reviewerId === user?.id);
   const isGuest = !isAuthenticated;
+
+  // Poll / check unread messages for this gig
+  const checkUnreadMessages = async () => {
+    if (!id || !job?.escrow) return;
+    try {
+      const res = await api.get(`/jobs/${id}/messages`);
+      const msgs = res.data.messages || [];
+      const seenId = parseInt(
+        localStorage.getItem(`giggle_chat_seen_${id}`) || '0',
+        10
+      );
+      const unread = msgs.filter(
+        (m) => m.id > seenId && m.sender?.id !== user?.id
+      );
+      setUnreadCount(unread.length);
+    } catch {
+      // silent catch for unread counter poll
+    }
+  };
+
+  useEffect(() => {
+    if (job?.escrow && (isOwnerClient || isHiredFreelancer || isAdmin)) {
+      checkUnreadMessages();
+      const interval = setInterval(checkUnreadMessages, 10000);
+      return () => clearInterval(interval);
+    }
+  }, [id, job?.escrow?.id, isOwnerClient, isHiredFreelancer, isAdmin, user?.id]);
+
+  const handleOpenChat = () => {
+    setIsChatOpen(true);
+    setUnreadCount(0);
+  };
 
   // 1. Fetch main job details
   const fetchJob = async () => {
@@ -349,7 +387,7 @@ export default function JobDetail() {
   if (!job) return null;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       {/* Top Banner / Feedback Alert */}
       {feedbackSuccess && (
         <div className="p-4 bg-jake border-3 border-ink rounded-xl shadow-brutal-sm flex items-center justify-between text-ink animate-fade-in">
@@ -366,129 +404,149 @@ export default function JobDetail() {
         </div>
       )}
 
-      {/* ─── GIG OVERVIEW CARD (Visible to Everyone) ───────────────────────── */}
-      <div className="brutal-card p-6 sm:p-8 bg-white border-4 border-ink shadow-brutal">
-        {/* Header Badges & Budget */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6 border-b-4 border-ink">
-          <div>
-            <div className="flex items-center gap-2 flex-wrap mb-2">
-              <span
-                className={`brutal-badge text-xs font-black ${getCategoryBadgeColor(
-                  job.category
-                )}`}
-              >
-                {job.category}
-              </span>
-              <span
-                className={`brutal-badge text-xs font-black ${getJobStatusBadge(
-                  job.status
-                )}`}
-              >
-                {job.status}
-              </span>
-            </div>
-            <h1 className="text-2xl sm:text-4xl font-black font-heading text-ink">
-              {job.title}
-            </h1>
-          </div>
+      {/* ─── EXPANDED FULL-WIDTH GIG WORKSPACE ─────────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* ─── LEFT / MAIN PRIMARY COLUMN (lg:col-span-7 xl:col-span-8) ──────── */}
+        <div className="lg:col-span-7 xl:col-span-8 space-y-8">
+          {/* ─── GIG OVERVIEW CARD (Visible to Everyone) ───────────────────────── */}
+          <div className="brutal-card p-6 sm:p-8 bg-white border-4 border-ink shadow-brutal">
+            {/* Header Badges & Budget */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6 border-b-4 border-ink">
+              <div>
+                <div className="flex items-center gap-2 flex-wrap mb-2">
+                  <span
+                    className={`brutal-badge text-xs font-black ${getCategoryBadgeColor(
+                      job.category
+                    )}`}
+                  >
+                    {job.category}
+                  </span>
+                  <span
+                    className={`brutal-badge text-xs font-black ${getJobStatusBadge(
+                      job.status
+                    )}`}
+                  >
+                    {job.status}
+                  </span>
+                </div>
+                <h1 className="text-2xl sm:text-4xl font-black font-heading text-ink">
+                  {job.title}
+                </h1>
+              </div>
 
-          <div className="sm:text-right flex-shrink-0">
-            <span className="text-[10px] uppercase font-black tracking-wider text-gray-500 block">
-              Fixed Budget
-            </span>
-            <span className="text-2xl sm:text-4xl font-black font-mono flex items-center sm:justify-end text-ink bg-jake px-3 py-1 rounded border-2 border-ink shadow-brutal-sm">
-              <IndianRupee className="w-5 h-5 sm:w-7 sm:h-7 -mr-1" />
-              {Number(job.budget).toLocaleString('en-IN')}
-            </span>
-          </div>
-        </div>
-
-        {/* Client & Meta Info */}
-        <div className="py-4 border-b-2 border-ink/20 flex flex-wrap items-center justify-between gap-4 text-xs font-bold text-gray-700">
-          <div className="flex items-center gap-4 flex-wrap">
-            {/* Client Attribution Link */}
-            {job.client && (
-              <Link
-                to={`/users/${job.client.id}`}
-                className="inline-flex items-center gap-1.5 font-bold text-ink hover:text-finn transition-colors underline decoration-ink/40"
-                title="View Client Profile"
-              >
-                <User className="w-4 h-4 text-finn" />
-                <span>Posted by {job.client.name}</span>
-                <ExternalLink className="w-3.5 h-3.5 text-gray-500" />
-              </Link>
-            )}
-
-            {/* Delivery Deadline */}
-            <div className="flex items-center gap-1.5 text-gray-600 font-mono">
-              <Clock className="w-4 h-4 text-bmo" />
-              <span>
-                Due{' '}
-                {new Date(job.deadline).toLocaleDateString('en-IN', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                })}
-              </span>
-            </div>
-          </div>
-
-          {/* Owner-Only: Soft Cancel Gig Action */}
-          {isOwnerClient && job.status === 'OPEN' && (
-            <button
-              onClick={() => setCancelModalOpen(true)}
-              disabled={cancellingJob}
-              className="px-3 py-1.5 border-2 border-ink rounded bg-bubblegum/20 hover:bg-bubblegum text-xs font-bold text-ink transition-colors flex items-center gap-1 cursor-pointer"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              {cancellingJob ? 'Cancelling...' : 'Cancel Gig'}
-            </button>
-          )}
-        </div>
-
-        {/* Job Description */}
-        <div className="py-6 border-b-2 border-ink/20">
-          <h3 className="font-heading font-black text-xs uppercase tracking-wider text-gray-500 mb-2">
-            Gig Description & Deliverables
-          </h3>
-          <p className="text-ink text-sm sm:text-base font-medium whitespace-pre-line leading-relaxed">
-            {job.description}
-          </p>
-        </div>
-
-        {/* Required Skills */}
-        <div className="pt-6">
-          <h4 className="font-heading font-black text-xs uppercase tracking-wider text-gray-500 mb-2">
-            Required Technical Skills
-          </h4>
-          <div className="flex flex-wrap gap-2">
-            {job.requiredSkills && job.requiredSkills.length > 0 ? (
-              job.requiredSkills.map((skill) => (
-                <span
-                  key={skill}
-                  className="brutal-badge bg-paper text-ink font-mono text-xs font-bold"
-                >
-                  #{skill}
+              <div className="sm:text-right flex-shrink-0">
+                <span className="text-[10px] uppercase font-black tracking-wider text-gray-500 block">
+                  Fixed Budget
                 </span>
-              ))
-            ) : (
-              <span className="text-xs text-gray-400 italic">
-                None specified
-              </span>
-            )}
+                <span className="text-2xl sm:text-4xl font-black font-mono flex items-center sm:justify-end text-ink bg-jake px-3 py-1 rounded border-2 border-ink shadow-brutal-sm">
+                  <IndianRupee className="w-5 h-5 sm:w-7 sm:h-7 -mr-1" />
+                  {Number(job.budget).toLocaleString('en-IN')}
+                </span>
+              </div>
+            </div>
+
+            {/* Client, Meta & Action Bar */}
+            <div className="py-4 border-b-2 border-ink/20 flex flex-wrap items-center justify-between gap-4 text-xs font-bold text-gray-700">
+              <div className="flex items-center gap-4 flex-wrap">
+                {/* Client Attribution Link */}
+                {job.client && (
+                  <Link
+                    to={`/users/${job.client.id}`}
+                    className="inline-flex items-center gap-1.5 font-bold text-ink hover:text-finn transition-colors underline decoration-ink/40"
+                    title="View Client Profile"
+                  >
+                    <User className="w-4 h-4 text-finn" />
+                    <span>Posted by {job.client.name}</span>
+                    <ExternalLink className="w-3.5 h-3.5 text-gray-500" />
+                  </Link>
+                )}
+
+                {/* Delivery Deadline */}
+                <div className="flex items-center gap-1.5 text-gray-600 font-mono">
+                  <Clock className="w-4 h-4 text-bmo" />
+                  <span>
+                    Due{' '}
+                    {new Date(job.deadline).toLocaleDateString('en-IN', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                    })}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Workroom Chat Button with Unread Badge */}
+                {job.escrow && (isOwnerClient || isHiredFreelancer || isAdmin) && (
+                  <button
+                    type="button"
+                    onClick={handleOpenChat}
+                    className="brutal-btn bg-jake text-ink text-xs py-2 px-3 sm:px-4 font-black shadow-brutal-sm flex items-center gap-2 cursor-pointer hover:translate-x-[-1px] hover:translate-y-[-1px] relative transition-transform"
+                  >
+                    <MessageSquare className="w-4 h-4 stroke-[2.5]" />
+                    <span>
+                      {isOwnerClient
+                        ? 'Chat with Freelancer'
+                        : isHiredFreelancer
+                        ? 'Chat with Client'
+                        : 'Workroom Chat'}
+                    </span>
+                    {unreadCount > 0 && (
+                      <span className="flex items-center justify-center min-w-[20px] h-5 px-1 bg-bubblegum text-ink text-[10px] font-black rounded-full border-2 border-ink shadow-brutal-xs animate-bounce">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </button>
+                )}
+
+                {/* Owner-Only: Soft Cancel Gig Action */}
+                {isOwnerClient && job.status === 'OPEN' && (
+                  <button
+                    type="button"
+                    onClick={() => setCancelModalOpen(true)}
+                    disabled={cancellingJob}
+                    className="px-3 py-1.5 border-2 border-ink rounded bg-bubblegum/20 hover:bg-bubblegum text-xs font-bold text-ink transition-colors flex items-center gap-1 cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    {cancellingJob ? 'Cancelling...' : 'Cancel Gig'}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Job Description */}
+            <div className="py-6 border-b-2 border-ink/20">
+              <h3 className="font-heading font-black text-xs uppercase tracking-wider text-gray-500 mb-2">
+                Gig Description & Deliverables
+              </h3>
+              <p className="text-ink text-sm sm:text-base font-medium whitespace-pre-line leading-relaxed">
+                {job.description}
+              </p>
+            </div>
+
+            {/* Required Skills */}
+            <div className="pt-6">
+              <h4 className="font-heading font-black text-xs uppercase tracking-wider text-gray-500 mb-2">
+                Required Technical Skills
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {job.requiredSkills && job.requiredSkills.length > 0 ? (
+                  job.requiredSkills.map((skill) => (
+                    <span
+                      key={skill}
+                      className="brutal-badge bg-paper text-ink font-mono text-xs font-bold"
+                    >
+                      #{skill}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-xs text-gray-400 italic">
+                    None specified
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-
-      {/* ─── PAYMENT PROTECTION VAULT (Visible when escrow exists for owner, freelancer, or admin) ─── */}
-      {job.escrow && (isOwnerClient || isHiredFreelancer || isAdmin) && (
-        <EscrowVaultCard job={job} onRefresh={fetchJob} user={user} />
-      )}
-
-      {/* ─── IN-GIG WORKROOM CHAT (Visible when escrow exists for owner, hired freelancer, or admin) ─── */}
-      {job.escrow && (isOwnerClient || isHiredFreelancer || isAdmin) && (
-        <MessageThread jobId={job.id} currentUserId={user?.id} />
-      )}
 
       {/* ─── ROLE-AWARE INTERACTIVE SECTION ─────────────────────────────────── */}
 
@@ -1013,6 +1071,64 @@ export default function JobDetail() {
           )}
         </div>
       )}
+        </div>
+
+        {/* ─── RIGHT STICKY COLUMN (lg:col-span-5 xl:col-span-4) ─────────── */}
+        <div className="lg:col-span-5 xl:col-span-4 lg:sticky lg:top-6 space-y-6">
+          {job.escrow && (isOwnerClient || isHiredFreelancer || isAdmin) ? (
+            <EscrowVaultCard job={job} onRefresh={fetchJob} user={user} />
+          ) : (
+            <div className="brutal-card p-6 bg-bmo text-ink border-4 border-ink shadow-brutal rounded-2xl relative overflow-hidden">
+              <div className="flex items-center gap-2 pb-3 mb-4 border-b-2 border-ink">
+                <div className="w-9 h-9 rounded-xl bg-white border-2 border-ink shadow-brutal-sm flex items-center justify-center font-bold text-ink flex-shrink-0">
+                  <ShieldCheck className="w-5 h-5 text-bmo" />
+                </div>
+                <div>
+                  <span className="text-[10px] uppercase font-mono font-black text-ink/80 block leading-tight">
+                    Giggle Platform Guarantee
+                  </span>
+                  <h3 className="font-heading font-black text-lg text-ink leading-none">
+                    PROTECTED GIG ESCROW
+                  </h3>
+                </div>
+              </div>
+
+              <div className="space-y-3 text-xs font-medium text-ink">
+                <div className="p-3 bg-white/85 rounded-xl border-2 border-ink shadow-brutal-xs">
+                  <span className="font-heading font-black block uppercase text-[11px] mb-1">
+                    🔒 100% Upfront Funding
+                  </span>
+                  <p className="text-gray-800 leading-relaxed">
+                    Once a proposal is accepted, the fixed budget of{' '}
+                    <span className="font-mono font-bold text-ink">
+                      ₹{Number(job.budget).toLocaleString('en-IN')}
+                    </span>{' '}
+                    is deposited into a secured payment protection vault before work begins.
+                  </p>
+                </div>
+
+                <div className="p-3 bg-white/85 rounded-xl border-2 border-ink shadow-brutal-xs">
+                  <span className="font-heading font-black block uppercase text-[11px] mb-1">
+                    🎯 Zero Bidding Wars
+                  </span>
+                  <p className="text-gray-800 leading-relaxed">
+                    Freelancers compete purely on technical quality and delivery timeline. The price is non-negotiable.
+                  </p>
+                </div>
+
+                <div className="p-3 bg-white/85 rounded-xl border-2 border-ink shadow-brutal-xs">
+                  <span className="font-heading font-black block uppercase text-[11px] mb-1">
+                    🤝 Verified Milestone Release
+                  </span>
+                  <p className="text-gray-800 leading-relaxed">
+                    Funds are disbursed only after client verification and code approval. Revisions are supported with structured feedback.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Confirmation Modal: Freelancer Withdraw Proposal */}
       <ConfirmModal
@@ -1064,6 +1180,28 @@ export default function JobDetail() {
           setAcceptModalData({ isOpen: false, proposalId: null, freelancerName: '' })
         }
       />
+
+      {/* ─── WORKROOM CHAT POPUP MODAL ──────────────────────────────────────── */}
+      {job.escrow && (isOwnerClient || isHiredFreelancer || isAdmin) && (
+        <MessageThread
+          jobId={job.id}
+          currentUserId={user?.id}
+          jobTitle={job.title}
+          otherPartyName={
+            isOwnerClient
+              ? job.escrow?.freelancer?.name || 'Assigned Freelancer'
+              : job.client?.name || 'Gig Client'
+          }
+          isOpen={isChatOpen}
+          onClose={() => {
+            setIsChatOpen(false);
+            checkUnreadMessages();
+          }}
+          onMessagesChange={() => {
+            setUnreadCount(0);
+          }}
+        />
+      )}
     </div>
   );
 }
