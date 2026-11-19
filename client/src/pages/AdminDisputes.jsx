@@ -239,10 +239,10 @@ export default function AdminDisputes() {
                     </span>
                     <div className="font-bold text-sm text-ink flex items-center gap-1.5">
                       <User className="w-4 h-4 text-finn" />
-                      {d.job?.client?.name}
+                      {d.job?.client?.name || 'Unknown Client'}
                     </div>
                     <div className="text-xs font-mono text-gray-600 mt-0.5">
-                      {d.job?.client?.email}
+                      {d.job?.client?.email || 'No email provided'}
                     </div>
                   </div>
 
@@ -253,10 +253,10 @@ export default function AdminDisputes() {
                     </span>
                     <div className="font-bold text-sm text-ink flex items-center gap-1.5">
                       <User className="w-4 h-4 text-jake" />
-                      {d.freelancer?.name}
+                      {d.freelancer?.name || 'Unknown Freelancer'}
                     </div>
                     <div className="text-xs font-mono text-gray-600 mt-0.5">
-                      {d.freelancer?.email}
+                      {d.freelancer?.email || 'No email provided'}
                     </div>
                     {d.freelancer?.upiId && (
                       <div className="text-[11px] font-mono font-bold text-ink mt-1">
@@ -320,7 +320,7 @@ export default function AdminDisputes() {
                     {d.transactions.map((tx) => (
                       <div key={tx.id} className="flex items-center justify-between text-[11px] font-mono py-0.5">
                         <span className="font-bold">{tx.type} ({tx.status})</span>
-                        <span>₹{Number(tx.amount).toLocaleString('en-IN')}</span>
+                        <span>₹{Number(tx?.amount || 0).toLocaleString('en-IN')}</span>
                         <span className="text-gray-500">{tx.razorpayOrderId}</span>
                       </div>
                     ))}
@@ -337,7 +337,7 @@ export default function AdminDisputes() {
                         escrowId: d.id,
                         resolution: 'RELEASE_TO_FREELANCER',
                         title: 'Release Payout to Freelancer?',
-                        message: `Rule in favor of the freelancer (${d.freelancer?.name})? This will transition the escrow vault to RELEASED, mark deliverables APPROVED, complete the gig, and log an official PAYOUT transaction for ₹${Number(d.amount).toLocaleString('en-IN')}.`,
+                        message: `Rule in favor of the freelancer (${d.freelancer?.name || 'Unknown Freelancer'})? This will transition the escrow vault to RELEASED, mark deliverables APPROVED, complete the gig, and log an official PAYOUT transaction for ₹${Number(d?.amount || 0).toLocaleString('en-IN')}.`,
                         variant: 'jake',
                       })
                     }
@@ -355,7 +355,7 @@ export default function AdminDisputes() {
                         escrowId: d.id,
                         resolution: 'REFUND_TO_CLIENT',
                         title: 'Refund Client & Cancel Gig?',
-                        message: `Rule in favor of the client (${d.job?.client?.name})? This will transition the escrow vault to RELEASED, cancel the gig, and record an official REFUND transaction for ₹${Number(d.amount).toLocaleString('en-IN')}.`,
+                        message: `Rule in favor of the client (${d.job?.client?.name || 'Unknown Client'})? This will transition the escrow vault to RELEASED, cancel the gig, and record an official REFUND transaction for ₹${Number(d?.amount || 0).toLocaleString('en-IN')}.`,
                         variant: 'bubblegum',
                       })
                     }

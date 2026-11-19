@@ -39,7 +39,7 @@ export default function JobCard({ job }) {
               job.category
             )}`}
           >
-            {job.category}
+            {job.category === 'AI_ML' ? 'AI / ML' : job.category}
           </span>
           <div className="flex items-center text-lg sm:text-xl font-black font-mono text-ink bg-jake px-2.5 py-0.5 rounded border-2 border-ink shadow-brutal-sm">
             <IndianRupee className="w-4 h-4 inline -mr-0.5" />
@@ -127,7 +127,19 @@ export default function JobCard({ job }) {
             to={`/jobs/${job.id}`}
             className="brutal-btn bg-finn text-ink text-xs py-1.5 px-3 shadow-brutal-sm flex items-center gap-1"
           >
-            <span>{isClient ? 'Inspect Gig' : 'View Gig & Apply'}</span>
+            <span>
+              {isClient
+                ? 'Inspect Gig'
+                : job.status === 'OPEN'
+                ? 'View Gig & Apply'
+                : job.status === 'IN_PROGRESS'
+                ? 'View Active Gig'
+                : job.status === 'COMPLETED'
+                ? 'View Completed Gig'
+                : job.status === 'CANCELLED'
+                ? 'View Closed Gig'
+                : 'View Gig'}
+            </span>
             <ArrowUpRight className="w-3.5 h-3.5" />
           </Link>
         </div>

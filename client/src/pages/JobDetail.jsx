@@ -107,11 +107,41 @@ export default function JobDetail() {
   };
 
   useEffect(() => {
+    let isMounted = true;
+
+    const pollUnreadMessages = async () => {
+      if (!id || !job?.escrow) return;
+      try {
+        const res = await api.get(`/jobs/${id}/messages`);
+        if (!isMounted) return;
+        const msgs = res.data.messages || [];
+        const seenId = parseInt(
+          localStorage.getItem(`giggle_chat_seen_${id}`) || '0',
+          10
+        );
+        const unread = msgs.filter(
+          (m) => m.id > seenId && m.sender?.id !== user?.id
+        );
+        if (isMounted) {
+          setUnreadCount(unread.length);
+        }
+      } catch {
+        // silent catch for unread counter poll
+      }
+    };
+
     if (job?.escrow && (isOwnerClient || isHiredFreelancer || isAdmin)) {
-      checkUnreadMessages();
-      const interval = setInterval(checkUnreadMessages, 10000);
-      return () => clearInterval(interval);
+      pollUnreadMessages();
+      const interval = setInterval(pollUnreadMessages, 10000);
+      return () => {
+        isMounted = false;
+        clearInterval(interval);
+      };
     }
+
+    return () => {
+      isMounted = false;
+    };
   }, [id, job?.escrow?.id, isOwnerClient, isHiredFreelancer, isAdmin, user?.id]);
 
   const handleOpenChat = () => {
@@ -296,6 +326,7 @@ export default function JobDetail() {
   // Handler: Participant leaves two-way review
   const handleSubmitReview = async (e) => {
     e.preventDefault();
+    if (submittingReview) return;
     setSubmittingReview(true);
     setReviewError('');
     setReviewSuccess('');
@@ -419,7 +450,7 @@ export default function JobDetail() {
                       job.category
                     )}`}
                   >
-                    {job.category}
+                    {job.category === 'AI_ML' ? 'AI / ML' : job.category}
                   </span>
                   <span
                     className={`brutal-badge text-xs font-black ${getJobStatusBadge(

@@ -37,9 +37,14 @@ export default function Home() {
               <LayoutDashboard className="w-5 h-5" /> My Dashboard
             </Link>
           ) : (
-            <Link to="/register" className="brutal-btn bg-finn text-ink flex items-center gap-2 text-lg">
-              Join as Client
-            </Link>
+            <>
+              <Link to="/register" className="brutal-btn bg-finn text-ink flex items-center gap-2 text-lg">
+                Join as Client
+              </Link>
+              <Link to="/register" className="brutal-btn bg-white text-ink flex items-center gap-2 text-lg">
+                Join as Freelancer
+              </Link>
+            </>
           )}
         </div>
       </section>

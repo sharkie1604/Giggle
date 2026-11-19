@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import {
@@ -19,6 +19,11 @@ import {
 export default function Profile() {
   const { id } = useParams();
   const { user: currentUser, updateUser } = useAuth();
+
+  // If no public user ID is in URL and no authenticated user session exists, redirect to /login
+  if (!id && !currentUser) {
+    return <Navigate to="/login" replace />;
+  }
 
   // If URL has :id use that; otherwise fall back to authenticated user's ID
   const targetUserId = id ? Number(id) : currentUser?.id;
@@ -108,12 +113,17 @@ export default function Profile() {
     setSaveLoading(true);
 
     try {
+      const ensureHttps = (url) => {
+        if (!url) return null;
+        const trimmed = url.trim();
+        if (!trimmed) return null;
+        return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+      };
+
       const payload = {
         name: editFormData.name.trim(),
         bio: editFormData.bio ? editFormData.bio.trim() : null,
-        portfolioUrl: editFormData.portfolioUrl
-          ? editFormData.portfolioUrl.trim()
-          : null,
+        portfolioUrl: ensureHttps(editFormData.portfolioUrl),
       };
 
       if (!isClientProfile) {
@@ -122,9 +132,7 @@ export default function Profile() {
           .map((s) => s.trim())
           .filter((s) => s.length > 0);
         payload.skills = parsedSkills;
-        payload.githubUrl = editFormData.githubUrl
-          ? editFormData.githubUrl.trim()
-          : null;
+        payload.githubUrl = ensureHttps(editFormData.githubUrl);
         payload.upiId = editFormData.upiId
           ? editFormData.upiId.trim()
           : null;

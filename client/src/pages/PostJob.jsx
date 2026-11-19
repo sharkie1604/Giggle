@@ -47,7 +47,7 @@ export default function PostJob() {
             <ShieldAlert className="w-8 h-8 text-ink" />
           </div>
           <span className="brutal-badge bg-bubblegum text-ink text-xs mb-2">
-            403 • CLIENT ACCESS ONLY
+            CLIENTS ONLY • FREELANCERS CANNOT POST GIGS
           </span>
           <h2 className="text-2xl font-black font-heading text-ink mt-2 mb-2">
             FREELANCER PROFILE DETECTED
@@ -198,7 +198,7 @@ export default function PostJob() {
             >
               {CATEGORIES.map((cat) => (
                 <option key={cat} value={cat}>
-                  {cat}
+                  {cat === 'AI_ML' ? 'AI / ML' : cat}
                 </option>
               ))}
             </select>
@@ -263,6 +263,7 @@ export default function PostJob() {
               name="deadline"
               value={formData.deadline}
               onChange={handleChange}
+              min={new Date().toISOString().split('T')[0]}
               required
               className="brutal-input font-mono"
             />

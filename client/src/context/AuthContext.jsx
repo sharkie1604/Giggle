@@ -9,6 +9,8 @@ export const AuthProvider = ({ children }) => {
       const savedUser = localStorage.getItem('user');
       return savedUser ? JSON.parse(savedUser) : null;
     } catch {
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
       return null;
     }
   });
@@ -21,6 +23,18 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
     localStorage.removeItem('user');
     localStorage.removeItem('token');
+  }, []);
+
+  // Listen for global 401 unauthorized events from Axios interceptor
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      setUser(null);
+      setToken(null);
+    };
+    window.addEventListener('auth:unauthorized', handleUnauthorized);
+    return () => {
+      window.removeEventListener('auth:unauthorized', handleUnauthorized);
+    };
   }, []);
 
   // On mount and whenever token changes, refresh user profile via /auth/me

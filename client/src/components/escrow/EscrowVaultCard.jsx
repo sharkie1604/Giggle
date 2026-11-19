@@ -253,7 +253,7 @@ export default function EscrowVaultCard({ job, onRefresh, user }) {
           </div>
           <div>
             <span className="text-[10px] uppercase font-mono font-black text-ink/80 block leading-tight">
-              Giggle Payment Protection Vault #{escrow.id}
+              Giggle Protected Payment Vault
             </span>
             <h3 className="font-heading font-black text-2xl text-ink leading-none">
               FIXED PAYMENT VAULT
@@ -288,12 +288,12 @@ export default function EscrowVaultCard({ job, onRefresh, user }) {
             <div className="flex items-center gap-1 mt-0.5">
               <IndianRupee className="w-6 h-6 stroke-[2.5] text-ink" />
               <span className="font-mono font-black text-3xl text-ink">
-                {escrow.status === 'RELEASED' ? '0' : Number(escrow.amount).toLocaleString('en-IN')}
+                {escrow.status === 'RELEASED' ? '0' : Number(escrow?.amount || 0).toLocaleString('en-IN')}
               </span>
             </div>
             {escrow.status === 'RELEASED' && (
               <span className="text-[11px] font-bold text-gray-700 block mt-1">
-                ₹0 Held in Vault (Full ₹{Number(escrow.amount).toLocaleString('en-IN')} Released)
+                ₹0 Held in Vault (Full ₹{Number(escrow?.amount || 0).toLocaleString('en-IN')} Released)
               </span>
             )}
           </div>
@@ -316,13 +316,10 @@ export default function EscrowVaultCard({ job, onRefresh, user }) {
               </Link>
             ) : (
               <span className="font-mono font-bold text-sm text-ink mt-0.5 block">
-                Freelancer #{escrow.freelancerId}
+                Assigned Freelancer
               </span>
             )}
           </div>
-          <span className="text-[10px] font-mono font-bold bg-jake px-2 py-1 rounded border border-ink shadow-brutal-sm">
-            CONTRACT LOCK
-          </span>
         </div>
       </div>
 
@@ -378,7 +375,7 @@ export default function EscrowVaultCard({ job, onRefresh, user }) {
                   ) : (
                     <>
                       <ShieldCheck className="w-5 h-5" />
-                      FUND PAYMENT PROTECTION (₹{Number(escrow.amount).toLocaleString('en-IN')})
+                      FUND PAYMENT PROTECTION (₹{Number(escrow?.amount || 0).toLocaleString('en-IN')})
                     </>
                   )}
                 </button>
@@ -388,12 +385,12 @@ export default function EscrowVaultCard({ job, onRefresh, user }) {
               <div className="p-3 bg-paper border-2 border-dashed border-ink rounded-lg flex items-start gap-2 text-xs">
                 <Info className="w-4 h-4 text-finn flex-shrink-0 mt-0.5" />
                 <div className="text-gray-700">
-                  <span className="font-bold text-ink">Razorpay Test Mode:</span>{' '}
-                  In Razorpay popup, select <span className="font-bold">UPI</span> and use virtual VPA:{' '}
+                  <span className="font-bold text-ink">Test Payment Mode:</span>{' '}
+                  Use UPI ID{' '}
                   <span className="font-mono font-bold bg-white px-1.5 py-0.5 rounded border border-ink text-ink">
                     success@razorpay
-                  </span>
-                  . In local environments without public webhooks, status is verified upon payment completion.
+                  </span>{' '}
+                  (or Netbanking) in the checkout popup to simulate an instant deposit.
                 </div>
               </div>
             </div>
@@ -431,7 +428,7 @@ export default function EscrowVaultCard({ job, onRefresh, user }) {
                 DELIVERABLES & SUBMISSIONS ({submissions.length})
               </h4>
               <span className="text-[10px] font-mono font-bold bg-finn px-2 py-0.5 rounded border border-ink text-ink">
-                ESCROW LOCKED
+                FUNDS PROTECTED
               </span>
             </div>
 
@@ -475,7 +472,13 @@ export default function EscrowVaultCard({ job, onRefresh, user }) {
                             : 'bg-jake text-ink'
                         }`}
                       >
-                        {sub.status}
+                        {sub.status === 'SUBMITTED'
+                          ? 'Submitted'
+                          : sub.status === 'REVISION_REQUESTED'
+                          ? 'Revision Requested'
+                          : sub.status === 'APPROVED'
+                          ? 'Approved'
+                          : sub.status}
                       </span>
                     </div>
 
@@ -743,7 +746,7 @@ export default function EscrowVaultCard({ job, onRefresh, user }) {
             <p>
               Release the protected vault balance of{' '}
               <span className="font-mono font-bold text-ink">
-                ₹{Number(escrow.amount).toLocaleString('en-IN')}
+                ₹{Number(escrow?.amount || 0).toLocaleString('en-IN')}
               </span>{' '}
               to <span className="font-bold text-ink">{escrow.freelancer?.name || 'the freelancer'}</span>?
             </p>

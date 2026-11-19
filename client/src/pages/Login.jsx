@@ -69,7 +69,7 @@ export default function Login() {
               onChange={(e) => setEmail(e.target.value)}
               required
               className="brutal-input"
-              placeholder="e.g. developer@techgig.in"
+              placeholder="name@example.com"
             />
           </div>
 
