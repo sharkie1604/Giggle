@@ -1,9 +1,16 @@
 import { Router } from 'express';
-import { getUserTransactions } from '../controllers/transaction.controller.js';
-import { verifyJwt } from '../middleware/auth.middleware.js';
+import {
+  getTransactionHistory,
+  getUserTransactions,
+} from '../controllers/transaction.controller.js';
+import { authenticate } from '../middleware/auth.middleware.js';
 
 const router = Router();
 
-router.get('/', verifyJwt, getUserTransactions);
+// GET /api/transactions/history -> Authenticated user's chronological payment ledger
+router.get('/history', authenticate, getTransactionHistory);
+
+// GET /api/transactions -> Base route alias
+router.get('/', authenticate, getTransactionHistory);
 
 export default router;

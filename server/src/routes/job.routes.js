@@ -12,6 +12,7 @@ import {
   getJobProposals,
 } from '../controllers/proposal.controller.js';
 import { submitCodeDelivery } from '../controllers/submission.controller.js';
+import { submitReview } from '../controllers/review.controller.js';
 import { createProposalSchema } from './proposal.routes.js';
 import { createSubmissionSchema } from './submission.routes.js';
 import { authenticate, authorizeRoles } from '../middleware/auth.middleware.js';
@@ -126,6 +127,21 @@ export const jobIdParamSchema = z.object({
   id: positiveIntParamSchema,
 });
 
+export const createReviewSchema = z
+  .object({
+    rating: z.coerce
+      .number({ required_error: 'Rating is required' })
+      .int('Rating must be an integer')
+      .min(1, 'Rating must be between 1 and 5')
+      .max(5, 'Rating must be between 1 and 5'),
+    comment: z
+      .string()
+      .trim()
+      .max(1000, 'Comment cannot exceed 1000 characters')
+      .optional(),
+  })
+  .strict();
+
 // ─── Route Declarations ───────────────────────────────────────────────────────
 
 // POST /api/jobs -> Client creates fixed-price gig
@@ -186,6 +202,14 @@ router.post(
   authorizeRoles('FREELANCER'),
   validate({ params: jobIdParamSchema, body: createSubmissionSchema }),
   submitCodeDelivery
+);
+
+// POST /api/jobs/:id/reviews -> Submit mutual review on completed gig (Phase 5 - Task 5.3)
+router.post(
+  '/:id/reviews',
+  authenticate,
+  validate({ params: jobIdParamSchema, body: createReviewSchema }),
+  submitReview
 );
 
 export default router;

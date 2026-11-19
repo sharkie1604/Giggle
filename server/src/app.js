@@ -70,4 +70,5 @@ app.use((req, res, next) => {
 // Centralized Prisma & Application Error Handler
 app.use(errorHandler);
 
+export { app };
 export default app;

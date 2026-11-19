@@ -82,6 +82,47 @@ export const confirmDepositWebhookAtomically = async ({
   return result;
 };
 
+/**
+ * findUserTransactionHistory — fetches transaction history for a user as payer, payee, or job participant
+ * Ordered by createdAt desc, including escrow state and job title.
+ *
+ * @param {number} userId
+ * @returns {Promise<Transaction[]>}
+ */
+export const findUserTransactionHistory = async (userId) => {
+  return prisma.transaction.findMany({
+    where: {
+      OR: [
+        { userId },
+        { escrow: { freelancerId: userId } },
+        { escrow: { job: { clientId: userId } } },
+      ],
+    },
+    orderBy: { createdAt: 'desc' },
+    include: {
+      escrow: {
+        select: {
+          id: true,
+          status: true,
+          job: {
+            select: {
+              id: true,
+              title: true,
+            },
+          },
+        },
+      },
+      user: {
+        select: {
+          id: true,
+          name: true,
+          role: true,
+        },
+      },
+    },
+  });
+};
+
 export const TransactionModel = {
   create: (data) => prisma.transaction.create({ data }),
   findById: (id) => prisma.transaction.findUnique({ where: { id } }),
@@ -98,6 +139,7 @@ export const TransactionModel = {
   update: (id, data) => prisma.transaction.update({ where: { id }, data }),
   createInitiatedDeposit,
   confirmDepositWebhookAtomically,
+  findUserTransactionHistory,
 };
 
 export default TransactionModel;

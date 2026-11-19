@@ -2,7 +2,11 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 import { env } from '../config/env.js';
 import { razorpay } from '../config/razorpay.js';
-import { findEscrowByIdWithJob, releaseEscrowAtomically } from '../models/escrow.model.js';
+import {
+  findEscrowByIdWithJob,
+  releaseEscrowAtomically,
+  markEscrowDisputed,
+} from '../models/escrow.model.js';
 import { createInitiatedDeposit } from '../models/transaction.model.js';
 
 /**
@@ -123,9 +127,46 @@ export const releaseEscrowPayout = asyncHandler(async (req, res) => {
 
 export const releaseEscrow = releaseEscrowPayout;
 
-export const disputeEscrow = asyncHandler(async (req, res) => {
-  res.status(200).json({ success: true, message: 'Dispute escrow placeholder' });
+/**
+ * POST /api/escrow/:id/dispute
+ * Client owner or assigned Freelancer raises a dispute on a funded escrow vault.
+ *
+ * CRITICAL SECURITY INVARIANTS:
+ * 1. Strict IDOR Check: Only the client owner or the assigned freelancer can raise a dispute.
+ * 2. Lifecycle Lock: Disputes can only be raised when Escrow is in FUNDED status.
+ */
+export const raiseDispute = asyncHandler(async (req, res) => {
+  const escrowId = Number(req.params.id);
+
+  const escrow = await findEscrowByIdWithJob(escrowId);
+  if (!escrow) {
+    throw new ApiError(404, 'Protected payment record not found');
+  }
+
+  // CRITICAL SECURITY RULE 5 (Strict IDOR Check):
+  // req.user.id must be either client owner or assigned freelancer
+  if (escrow.job.clientId !== req.user.id && escrow.freelancerId !== req.user.id) {
+    throw new ApiError(403, 'Only the client or hired freelancer on this gig can raise a dispute');
+  }
+
+  // Lifecycle check: Disputes can only be raised while escrow is FUNDED
+  if (escrow.status !== 'FUNDED') {
+    throw new ApiError(409, 'Disputes can only be raised while payment protection is funded');
+  }
+
+  const updatedEscrow = await markEscrowDisputed({
+    escrowId: escrow.id,
+    disputeReason: req.body.disputeReason,
+  });
+
+  res.status(200).json({
+    success: true,
+    message: 'Dispute submitted successfully. Our admin team will arbitrate.',
+    escrow: updatedEscrow,
+  });
 });
+
+export const disputeEscrow = raiseDispute;
 
 export default {
   createEscrowOrder,
@@ -133,5 +174,6 @@ export default {
   getEscrowDetails,
   releaseEscrow,
   releaseEscrowPayout,
+  raiseDispute,
   disputeEscrow,
 };
