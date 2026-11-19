@@ -32,7 +32,15 @@ router.get(
   getEscrowDetails
 );
 
-// POST /api/escrow/:id/release -> CLIENT releases payment to freelancer (Phase 5 - Task 5.2)
+// PATCH & POST /api/escrow/:id/release -> CLIENT releases payment to freelancer (Phase 5 - Task 5.2)
+router.patch(
+  '/:id/release',
+  authenticate,
+  authorizeRoles('CLIENT'),
+  validate({ params: escrowIdParamSchema }),
+  releaseEscrow
+);
+
 router.post(
   '/:id/release',
   authenticate,

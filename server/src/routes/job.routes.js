@@ -11,7 +11,9 @@ import {
   submitProposal,
   getJobProposals,
 } from '../controllers/proposal.controller.js';
+import { submitCodeDelivery } from '../controllers/submission.controller.js';
 import { createProposalSchema } from './proposal.routes.js';
+import { createSubmissionSchema } from './submission.routes.js';
 import { authenticate, authorizeRoles } from '../middleware/auth.middleware.js';
 import {
   validate,
@@ -175,6 +177,15 @@ router.get(
   authorizeRoles('CLIENT'),
   validate({ params: jobIdParamSchema }),
   getJobProposals
+);
+
+// POST /api/jobs/:id/submissions -> Hired freelancer submits code/deliverables
+router.post(
+  '/:id/submissions',
+  authenticate,
+  authorizeRoles('FREELANCER'),
+  validate({ params: jobIdParamSchema, body: createSubmissionSchema }),
+  submitCodeDelivery
 );
 
 export default router;
