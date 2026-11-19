@@ -72,15 +72,17 @@ export const findSubmissionByIdWithJob = async (submissionId) => {
 };
 
 /**
- * markSubmissionRevisionRequested — transitions a submission to REVISION_REQUESTED.
+ * markSubmissionRevisionRequested — transitions a submission to REVISION_REQUESTED and saves feedback notes.
  * @param {number} submissionId
+ * @param {string} [revisionNotes]
  * @returns {Promise<Submission>}
  */
-export const markSubmissionRevisionRequested = async (submissionId) => {
+export const markSubmissionRevisionRequested = async (submissionId, revisionNotes) => {
   return prisma.submission.update({
     where: { id: submissionId },
     data: {
       status: 'REVISION_REQUESTED',
+      ...(revisionNotes !== undefined ? { revisionNotes } : {}),
     },
   });
 };

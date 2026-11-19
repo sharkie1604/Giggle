@@ -31,6 +31,16 @@ export const submissionIdParamSchema = z.object({
   id: positiveIntParamSchema,
 });
 
+export const revisionSchema = z
+  .object({
+    revisionNotes: z
+      .string({ required_error: 'Revision notes are required' })
+      .trim()
+      .min(5, 'Please describe the changes needed (min 5 characters)')
+      .max(1000, 'Revision notes cannot exceed 1000 characters'),
+  })
+  .strict();
+
 export const jobIdParamSchema = z.object({
   jobId: positiveIntParamSchema,
 });
@@ -42,7 +52,7 @@ router.patch(
   '/:id/revision',
   authenticate,
   authorizeRoles('CLIENT'),
-  validate({ params: submissionIdParamSchema }),
+  validate({ params: submissionIdParamSchema, body: revisionSchema }),
   requestRevision
 );
 
@@ -51,7 +61,7 @@ router.post(
   '/:id/revision',
   authenticate,
   authorizeRoles('CLIENT'),
-  validate({ params: submissionIdParamSchema }),
+  validate({ params: submissionIdParamSchema, body: revisionSchema }),
   requestRevision
 );
 

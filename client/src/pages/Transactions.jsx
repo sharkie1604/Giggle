@@ -34,9 +34,14 @@ export default function Transactions() {
     fetchTransactions();
   }, []);
 
-  // Compute Summary Statistics
-  const totalDeposited = transactions
-    .filter((tx) => tx.type === 'DEPOSIT' && tx.status === 'SUCCESS')
+  // Compute Summary Statistics: Active in Protected Vaults vs Historical Payouts & Refunds
+  const activeInVaults = transactions
+    .filter(
+      (tx) =>
+        tx.type === 'DEPOSIT' &&
+        tx.status === 'SUCCESS' &&
+        (tx.escrow?.status === 'FUNDED' || tx.escrow?.status === 'DISPUTED')
+    )
     .reduce((sum, tx) => sum + Number(tx.amount || 0), 0);
 
   const totalPaidOut = transactions
@@ -95,22 +100,22 @@ export default function Transactions() {
 
       {/* Summary Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {/* Total Deposited */}
+        {/* Active in Protected Vaults */}
         <div className="brutal-card p-5 bg-jake/25 border-4 border-ink shadow-brutal">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-heading font-black uppercase text-gray-700">
-              Total Protected Deposits
+              Active in Protected Vaults
             </span>
             <ArrowDownLeft className="w-5 h-5 text-ink" />
           </div>
           <div className="flex items-center gap-1">
             <IndianRupee className="w-6 h-6 stroke-[2.5] text-ink" />
             <span className="font-mono font-black text-2xl sm:text-3xl text-ink">
-              {totalDeposited.toLocaleString('en-IN')}
+              {activeInVaults.toLocaleString('en-IN')}
             </span>
           </div>
           <p className="text-[10px] font-bold text-gray-600 mt-1 uppercase">
-            Secured in Vaults
+            Currently Held in Escrow
           </p>
         </div>
 

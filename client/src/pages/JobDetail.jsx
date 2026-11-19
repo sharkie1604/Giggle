@@ -21,6 +21,7 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import ConfirmModal from '../components/ui/ConfirmModal';
 import EscrowVaultCard from '../components/escrow/EscrowVaultCard';
+import MessageThread from '../components/jobs/MessageThread';
 
 export default function JobDetail() {
   const { id } = useParams();
@@ -482,6 +483,11 @@ export default function JobDetail() {
       {/* ─── PAYMENT PROTECTION VAULT (Visible when escrow exists for owner, freelancer, or admin) ─── */}
       {job.escrow && (isOwnerClient || isHiredFreelancer || isAdmin) && (
         <EscrowVaultCard job={job} onRefresh={fetchJob} user={user} />
+      )}
+
+      {/* ─── IN-GIG WORKROOM CHAT (Visible when escrow exists for owner, hired freelancer, or admin) ─── */}
+      {job.escrow && (isOwnerClient || isHiredFreelancer || isAdmin) && (
+        <MessageThread jobId={job.id} currentUserId={user?.id} />
       )}
 
       {/* ─── ROLE-AWARE INTERACTIVE SECTION ─────────────────────────────────── */}

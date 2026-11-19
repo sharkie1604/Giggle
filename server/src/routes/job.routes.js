@@ -13,6 +13,10 @@ import {
 } from '../controllers/proposal.controller.js';
 import { submitCodeDelivery } from '../controllers/submission.controller.js';
 import { submitReview } from '../controllers/review.controller.js';
+import {
+  getJobMessages,
+  sendJobMessage,
+} from '../controllers/message.controller.js';
 import { createProposalSchema } from './proposal.routes.js';
 import { createSubmissionSchema } from './submission.routes.js';
 import { authenticate, authorizeRoles } from '../middleware/auth.middleware.js';
@@ -210,6 +214,32 @@ router.post(
   authenticate,
   validate({ params: jobIdParamSchema, body: createReviewSchema }),
   submitReview
+);
+
+export const createMessageSchema = z
+  .object({
+    content: z
+      .string({ required_error: 'Message content is required' })
+      .trim()
+      .min(1, 'Message cannot be empty')
+      .max(2000, 'Message cannot exceed 2000 characters'),
+  })
+  .strict();
+
+// GET /api/jobs/:id/messages -> Retrieve in-gig workroom chat messages
+router.get(
+  '/:id/messages',
+  authenticate,
+  validate({ params: jobIdParamSchema }),
+  getJobMessages
+);
+
+// POST /api/jobs/:id/messages -> Post in-gig workroom chat message
+router.post(
+  '/:id/messages',
+  authenticate,
+  validate({ params: jobIdParamSchema, body: createMessageSchema }),
+  sendJobMessage
 );
 
 export default router;

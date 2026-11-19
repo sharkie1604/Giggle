@@ -81,6 +81,7 @@ model User {
   submissions     Submission[]  @relation("FreelancerSubmissions")
   reviewsGiven    Review[]      @relation("GivenReviews")
   reviewsReceived Review[]      @relation("ReceivedReviews")
+  messages        Message[]
 
   @@map("users")
 }
@@ -103,6 +104,7 @@ model Job {
   escrow      Escrow?
   submissions Submission[]
   reviews     Review[]
+  messages    Message[]
 
   @@index([status, category])
   @@map("jobs")
@@ -162,13 +164,14 @@ model Transaction {
 }
 
 model Submission {
-  id           Int              @id @default(autoincrement())
-  jobId        Int
-  freelancerId Int
-  deliveryUrl  String           @db.VarChar(255)
-  notes        String           @db.Text
-  status       SubmissionStatus @default(SUBMITTED)
-  createdAt    DateTime         @default(now())
+  id            Int              @id @default(autoincrement())
+  jobId         Int
+  freelancerId  Int
+  deliveryUrl   String           @db.VarChar(255)
+  notes         String           @db.Text
+  revisionNotes String?          @db.Text
+  status        SubmissionStatus @default(SUBMITTED)
+  createdAt     DateTime         @default(now())
 
   job        Job  @relation(fields: [jobId], references: [id], onDelete: Restrict)
   freelancer User @relation("FreelancerSubmissions", fields: [freelancerId], references: [id], onDelete: Restrict)
@@ -191,4 +194,18 @@ model Review {
 
   @@unique([jobId, reviewerId])
   @@map("reviews")
+}
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  jobId     Int
+  senderId  Int
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Restrict)
+  sender    User     @relation(fields: [senderId], references: [id], onDelete: Restrict)
+
+  @@index([jobId, createdAt])
+  @@map("messages")
 }
