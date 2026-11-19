@@ -11,8 +11,11 @@ import {
   FileText,
 } from 'lucide-react';
 import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 export default function Transactions() {
+  const { user } = useAuth();
+  const isFreelancer = user?.role === 'FREELANCER';
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -119,11 +122,11 @@ export default function Transactions() {
           </p>
         </div>
 
-        {/* Total Payouts */}
+        {/* Total Payouts / Earnings */}
         <div className="brutal-card p-5 bg-finn/25 border-4 border-ink shadow-brutal">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-heading font-black uppercase text-gray-700">
-              Total Released Payouts
+              {isFreelancer ? 'Total Earnings Received' : 'Total Released Payouts'}
             </span>
             <ArrowUpRight className="w-5 h-5 text-finn" />
           </div>
@@ -134,7 +137,7 @@ export default function Transactions() {
             </span>
           </div>
           <p className="text-[10px] font-bold text-gray-600 mt-1 uppercase">
-            Transferred to Freelancers
+            {isFreelancer ? 'Transferred to Your Account' : 'Transferred to Freelancers'}
           </p>
         </div>
 
