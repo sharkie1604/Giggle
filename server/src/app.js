@@ -14,10 +14,15 @@ const app = express();
 // Security HTTP headers
 app.use(helmet());
 
-// CORS configuration
+// CORS configuration: supports single origin or comma-separated list of origins in CLIENT_URL
+const allowedOrigins = (env.CLIENT_URL || process.env.CLIENT_URL || 'http://localhost:5173')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
 app.use(
   cors({
-    origin: env.CLIENT_URL,
+    origin: allowedOrigins.length === 1 ? allowedOrigins[0] : allowedOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Razorpay-Signature'],
