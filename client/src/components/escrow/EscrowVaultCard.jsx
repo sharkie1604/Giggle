@@ -280,42 +280,42 @@ export default function EscrowVaultCard({ job, onRefresh, user }) {
 
       {/* Vault Balance Display & Assigned Freelancer Info */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <div className="p-4 bg-white/80 backdrop-blur-xs border-3 border-ink rounded-xl shadow-brutal-sm flex items-center justify-between">
-          <div>
-            <span className="text-[11px] font-black uppercase text-gray-600 block">
+        <div className="p-3 bg-white/80 backdrop-blur-xs border-3 border-ink rounded-xl shadow-brutal-sm flex items-center justify-between min-w-0 overflow-hidden">
+          <div className="min-w-0 flex-1 mr-2">
+            <span className="text-[11px] font-black uppercase text-gray-600 block truncate">
               {escrow.status === 'RELEASED' ? 'Current Vault Balance' : 'Protected Gig Amount'}
             </span>
-            <div className="flex items-center gap-1 mt-0.5">
-              <IndianRupee className="w-6 h-6 stroke-[2.5] text-ink" />
-              <span className="font-mono font-black text-3xl text-ink">
+            <div className="flex items-center gap-1 mt-0.5 min-w-0">
+              <IndianRupee className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5] text-ink shrink-0" />
+              <span className="font-mono font-black text-xl sm:text-2xl text-ink tabular-nums tracking-tight break-words">
                 {escrow.status === 'RELEASED' ? '0' : Number(escrow?.amount || 0).toLocaleString('en-IN')}
               </span>
             </div>
             {escrow.status === 'RELEASED' && (
-              <span className="text-[11px] font-bold text-gray-700 block mt-1">
+              <span className="text-[11px] font-bold text-gray-700 block mt-1 break-words">
                 ₹0 Held in Vault (Full ₹{Number(escrow?.amount || 0).toLocaleString('en-IN')} Released)
               </span>
             )}
           </div>
-          <ShieldCheck className="w-10 h-10 text-bmo flex-shrink-0" />
+          <ShieldCheck className="w-8 h-8 sm:w-10 sm:h-10 text-bmo shrink-0 ml-1" />
         </div>
 
-        <div className="p-4 bg-white/80 backdrop-blur-xs border-3 border-ink rounded-xl shadow-brutal-sm flex items-center justify-between">
-          <div>
-            <span className="text-[11px] font-black uppercase text-gray-600 block">
+        <div className="p-3 bg-white/80 backdrop-blur-xs border-3 border-ink rounded-xl shadow-brutal-sm flex items-center justify-between min-w-0 overflow-hidden">
+          <div className="min-w-0 flex-1">
+            <span className="text-[11px] font-black uppercase text-gray-600 block truncate">
               Assigned Freelancer
             </span>
             {escrow.freelancer ? (
               <Link
                 to={`/users/${escrow.freelancerId}`}
-                className="font-heading font-black text-lg text-ink hover:underline flex items-center gap-1.5 mt-0.5"
+                className="font-heading font-black text-base sm:text-lg text-ink hover:underline flex items-center gap-1.5 mt-0.5 min-w-0"
               >
-                <User className="w-4 h-4 text-finn" />
-                {escrow.freelancer.name}
-                <ExternalLink className="w-3.5 h-3.5 text-gray-500" />
+                <User className="w-4 h-4 text-finn shrink-0" />
+                <span className="truncate">{escrow.freelancer.name}</span>
+                <ExternalLink className="w-3.5 h-3.5 text-gray-500 shrink-0" />
               </Link>
             ) : (
-              <span className="font-mono font-bold text-sm text-ink mt-0.5 block">
+              <span className="font-mono font-bold text-sm text-ink mt-0.5 block truncate">
                 Assigned Freelancer
               </span>
             )}
@@ -449,22 +449,22 @@ export default function EscrowVaultCard({ job, onRefresh, user }) {
                     className="p-4 border-2 border-ink rounded-xl bg-paper shadow-brutal-sm"
                   >
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 mb-2 border-b border-ink/10">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold text-xs bg-white px-2 py-0.5 rounded border border-ink">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <span className="font-mono font-bold text-xs bg-white px-2 py-0.5 rounded border border-ink shrink-0">
                           Delivery #{submissions.length - idx}
                         </span>
                         <a
                           href={sub.deliveryUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="font-mono text-xs font-bold text-finn hover:underline flex items-center gap-1"
+                          className="font-mono text-xs font-bold text-finn hover:underline inline-flex items-center gap-1 min-w-0 break-all"
                         >
-                          {sub.deliveryUrl}
-                          <ExternalLink className="w-3 h-3" />
+                          <span className="break-all">{sub.deliveryUrl}</span>
+                          <ExternalLink className="w-3 h-3 shrink-0" />
                         </a>
                       </div>
                       <span
-                        className={`brutal-badge text-[10px] font-black ${
+                        className={`brutal-badge text-[10px] font-black shrink-0 ${
                           sub.status === 'APPROVED'
                             ? 'bg-bmo text-ink'
                             : sub.status === 'REVISION_REQUESTED'
