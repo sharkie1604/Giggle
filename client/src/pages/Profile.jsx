@@ -263,21 +263,19 @@ export default function Profile() {
 
               {/* Rating & Joined info */}
               <div className="flex items-center gap-4 mt-1 text-xs font-bold text-gray-700 flex-wrap">
-                {!isClientProfile && (
-                  <div className="flex items-center gap-1 text-ink">
-                    <Star className="w-4 h-4 fill-jake text-ink" />
-                    {profileUser.averageRating !== null ? (
-                      <span>
-                        {profileUser.averageRating} / 5.0 ({profileUser.totalReviews}{' '}
-                        {profileUser.totalReviews === 1 ? 'review' : 'reviews'})
-                      </span>
-                    ) : (
-                      <span className="text-gray-500 font-medium">
-                        No reviews yet
-                      </span>
-                    )}
-                  </div>
-                )}
+                <div className="flex items-center gap-1 text-ink">
+                  <Star className="w-4 h-4 fill-jake text-ink" />
+                  {profileUser.averageRating !== null && (profileUser.totalReviews || profileUser.reviewsReceived?.length) > 0 ? (
+                    <span>
+                      {profileUser.averageRating} / 5.0 ({profileUser.totalReviews || profileUser.reviewsReceived?.length}{' '}
+                      {(profileUser.totalReviews || profileUser.reviewsReceived?.length) === 1 ? 'review' : 'reviews'})
+                    </span>
+                  ) : (
+                    <span className="text-gray-500 font-medium">
+                      No reviews yet
+                    </span>
+                  )}
+                </div>
 
                 <div className="flex items-center gap-1 text-gray-500 font-medium">
                   <Calendar className="w-3.5 h-3.5" />
@@ -690,121 +688,119 @@ export default function Profile() {
           )}
         </div>
       ) : (
-        <>
-          {/* Freelancer: Completed Tech Gigs */}
-          <div className="brutal-card p-6 sm:p-8 bg-white border-4 border-ink shadow-brutal">
-            <div className="flex items-center gap-2 pb-4 mb-6 border-b-3 border-ink">
-              <Briefcase className="w-5 h-5 text-finn" />
-              <h2 className="text-xl font-black font-heading text-ink">
-                COMPLETED GIGS ({profileUser.completedGigs ? profileUser.completedGigs.length : 0})
-              </h2>
-            </div>
-
-            {profileUser.completedGigs && profileUser.completedGigs.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {profileUser.completedGigs.map((gig) => (
-                  <Link
-                    key={gig.id}
-                    to={`/jobs/${gig.id}`}
-                    className="p-4 border-3 border-ink rounded-xl bg-paper shadow-brutal-sm hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-brutal transition-all block group"
-                  >
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <span className="brutal-badge bg-finn text-[10px]">
-                        {gig.category}
-                      </span>
-                      <span className="font-mono font-black text-xs text-ink">
-                        ₹{Number(gig.budget).toLocaleString('en-IN')}
-                      </span>
-                    </div>
-                    <h3 className="font-heading font-black text-sm text-ink group-hover:text-finn transition-colors line-clamp-1">
-                      {gig.title}
-                    </h3>
-                    <div className="text-[11px] font-semibold text-gray-500 mt-2 flex items-center justify-between">
-                      <span>
-                        Completed{' '}
-                        {new Date(gig.updatedAt).toLocaleDateString('en-IN', {
-                          month: 'short',
-                          year: 'numeric',
-                        })}
-                      </span>
-                      <span className="text-finn font-bold group-hover:underline">
-                        View Gig &rarr;
-                      </span>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <div className="p-8 text-center bg-paper border-2 border-dashed border-ink rounded-xl">
-                <p className="text-sm font-bold text-gray-600">
-                  No completed gigs recorded yet.
-                </p>
-              </div>
-            )}
+        /* Freelancer: Completed Tech Gigs */
+        <div className="brutal-card p-6 sm:p-8 bg-white border-4 border-ink shadow-brutal">
+          <div className="flex items-center gap-2 pb-4 mb-6 border-b-3 border-ink">
+            <Briefcase className="w-5 h-5 text-finn" />
+            <h2 className="text-xl font-black font-heading text-ink">
+              COMPLETED GIGS ({profileUser.completedGigs ? profileUser.completedGigs.length : 0})
+            </h2>
           </div>
 
-          {/* Freelancer: Reviews Received Section */}
-          <div className="brutal-card p-6 sm:p-8 bg-white border-4 border-ink shadow-brutal">
-            <div className="flex items-center gap-2 pb-4 mb-6 border-b-3 border-ink">
-              <MessageSquare className="w-5 h-5 text-jake" />
-              <h2 className="text-xl font-black font-heading text-ink">
-                REVIEWS ({profileUser.reviewsReceived ? profileUser.reviewsReceived.length : 0})
-              </h2>
-            </div>
-
-            {profileUser.reviewsReceived && profileUser.reviewsReceived.length > 0 ? (
-              <div className="space-y-4">
-                {profileUser.reviewsReceived.map((rev) => (
-                  <div
-                    key={rev.id}
-                    className="p-4 border-2 border-ink rounded-lg bg-paper shadow-brutal-sm"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-sm text-ink">
-                          {rev.reviewer?.name || 'Verified Client'}
-                        </span>
-                        <span className="text-[11px] text-gray-500 font-medium">
-                          •{' '}
-                          {new Date(rev.createdAt).toLocaleDateString('en-IN', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric',
-                          })}
-                        </span>
-                      </div>
-
-                      {/* Star Rating */}
-                      <div className="flex items-center gap-0.5 text-jake">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            className={`w-3.5 h-3.5 ${
-                              i < rev.rating
-                                ? 'fill-jake text-ink'
-                                : 'text-gray-300 fill-gray-200'
-                            }`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-
-                    <p className="text-sm text-ink font-medium leading-relaxed">
-                      "{rev.comment || 'Smooth milestone execution and clean code delivery.'}"
-                    </p>
+          {profileUser.completedGigs && profileUser.completedGigs.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {profileUser.completedGigs.map((gig) => (
+                <Link
+                  key={gig.id}
+                  to={`/jobs/${gig.id}`}
+                  className="p-4 border-3 border-ink rounded-xl bg-paper shadow-brutal-sm hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-brutal transition-all block group"
+                >
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className="brutal-badge bg-finn text-[10px]">
+                      {gig.category}
+                    </span>
+                    <span className="font-mono font-black text-xs text-ink">
+                      ₹{Number(gig.budget).toLocaleString('en-IN')}
+                    </span>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="p-8 text-center bg-paper border-2 border-dashed border-ink rounded-xl">
-                <p className="text-sm font-bold text-gray-600">
-                  No reviews received yet. Reviews appear once milestone payouts are released.
+                  <h3 className="font-heading font-black text-sm text-ink group-hover:text-finn transition-colors line-clamp-1">
+                    {gig.title}
+                  </h3>
+                  <div className="text-[11px] font-semibold text-gray-500 mt-2 flex items-center justify-between">
+                    <span>
+                      Completed{' '}
+                      {new Date(gig.updatedAt).toLocaleDateString('en-IN', {
+                        month: 'short',
+                        year: 'numeric',
+                      })}
+                    </span>
+                    <span className="text-finn font-bold group-hover:underline">
+                      View Gig &rarr;
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="p-8 text-center bg-paper border-2 border-dashed border-ink rounded-xl">
+              <p className="text-sm font-bold text-gray-600">
+                No completed gigs recorded yet.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Reviews Received Section (Rendered for both Clients and Freelancers) */}
+      <div className="brutal-card p-6 sm:p-8 bg-white border-4 border-ink shadow-brutal">
+        <div className="flex items-center gap-2 pb-4 mb-6 border-b-3 border-ink">
+          <MessageSquare className="w-5 h-5 text-jake" />
+          <h2 className="text-xl font-black font-heading text-ink">
+            REVIEWS ({profileUser.reviewsReceived ? profileUser.reviewsReceived.length : 0})
+          </h2>
+        </div>
+
+        {profileUser.reviewsReceived && profileUser.reviewsReceived.length > 0 ? (
+          <div className="space-y-4">
+            {profileUser.reviewsReceived.map((rev) => (
+              <div
+                key={rev.id}
+                className="p-4 border-2 border-ink rounded-lg bg-paper shadow-brutal-sm"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-sm text-ink">
+                      {rev.reviewer?.name || (isClientProfile ? 'Verified Freelancer' : 'Verified Client')}
+                    </span>
+                    <span className="text-[11px] text-gray-500 font-medium">
+                      •{' '}
+                      {new Date(rev.createdAt).toLocaleDateString('en-IN', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
+                    </span>
+                  </div>
+
+                  {/* Star Rating */}
+                  <div className="flex items-center gap-0.5 text-jake">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`w-3.5 h-3.5 ${
+                          i < rev.rating
+                            ? 'fill-jake text-ink'
+                            : 'text-gray-300 fill-gray-200'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <p className="text-sm text-ink font-medium leading-relaxed">
+                  "{rev.comment || 'Smooth milestone execution and clean code delivery.'}"
                 </p>
               </div>
-            )}
+            ))}
           </div>
-        </>
-      )}
+        ) : (
+          <div className="p-8 text-center bg-paper border-2 border-dashed border-ink rounded-xl">
+            <p className="text-sm font-bold text-gray-600">
+              No reviews yet.
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

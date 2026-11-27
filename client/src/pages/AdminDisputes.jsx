@@ -288,17 +288,17 @@ export default function AdminDisputes() {
                           key={sub.id}
                           className="p-3 bg-paper border border-ink/30 rounded-lg text-xs"
                         >
-                          <div className="flex items-center justify-between gap-2 mb-1">
+                          <div className="flex items-center justify-between gap-2 mb-1 min-w-0">
                             <a
                               href={sub.deliveryUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="font-mono font-bold text-finn hover:underline flex items-center gap-1"
+                              className="font-mono font-bold text-finn hover:underline inline-flex items-center gap-1 min-w-0 flex-1 break-all"
                             >
-                              {sub.deliveryUrl}
-                              <ExternalLink className="w-3 h-3" />
+                              <span className="break-all">{sub.deliveryUrl}</span>
+                              <ExternalLink className="w-3 h-3 shrink-0" />
                             </a>
-                            <span className="brutal-badge text-[10px]">
+                            <span className="brutal-badge text-[10px] shrink-0">
                               {sub.status}
                             </span>
                           </div>
