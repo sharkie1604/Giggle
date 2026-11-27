@@ -17,7 +17,26 @@ const envSchema = z.object({
   DIRECT_URL: z.string().min(1, 'DIRECT_URL is required'),
   JWT_SECRET: z.string().min(16, 'JWT_SECRET must be at least 16 characters long'),
   JWT_EXPIRES_IN: z.string().default('7d'),
-  CLIENT_URL: z.string().url('CLIENT_URL must be a valid URL').default('http://localhost:5173'),
+  CLIENT_URL: z
+    .string()
+    .default('http://localhost:5173')
+    .refine(
+      (val) => {
+        const urls = val.split(',').map((u) => u.trim()).filter(Boolean);
+        return (
+          urls.length > 0 &&
+          urls.every((u) => {
+            try {
+              new URL(u);
+              return true;
+            } catch {
+              return false;
+            }
+          })
+        );
+      },
+      { message: 'CLIENT_URL must contain one or more valid comma-separated URLs' }
+    ),
   RAZORPAY_KEY_ID: z.string().optional().default(''),
   RAZORPAY_KEY_SECRET: z.string().optional().default(''),
   RAZORPAY_WEBHOOK_SECRET: z.string().optional().default(''),
