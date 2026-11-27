@@ -9,6 +9,7 @@ export const authRateLimiter = rateLimit({
   max: 10, // Max 10 requests per window
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  skip: () => process.env.NODE_ENV === 'test',
   handler: (req, res) => {
     res.status(429).json({
       success: false,
@@ -27,6 +28,7 @@ export const apiRateLimiter = rateLimit({
   max: 300,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: () => process.env.NODE_ENV === 'test',
   handler: (req, res) => {
     res.status(429).json({
       success: false,
